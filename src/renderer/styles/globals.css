@@ -66,32 +66,22 @@
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
-  background: var(--bg-primary);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: var(--text-primary);
   line-height: 1.5;
   font-size: 14px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow: hidden;
+  margin: 0;
+  padding: 0;
 }
 
 .app-container {
   display: flex;
   height: 100vh;
   width: 100vw;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   position: relative;
-}
-
-.app-container::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: var(--glass-reflection);
-  pointer-events: none;
 }
 
 .main-content {

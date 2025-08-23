@@ -170,6 +170,8 @@ function App() {
     }
   };
 
+  console.log('App rendering', { isSidebarOpen, isChatOpen, isCommandPaletteOpen, activeFile });
+
   return (
     <div className="app-container">
       {isSidebarOpen && (
