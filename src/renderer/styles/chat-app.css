@@ -554,6 +554,46 @@
   transform: translateX(20px);
 }
 
+/* API Key Input */
+.api-key-input {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.api-key-field {
+  flex: 1;
+  padding: 10px 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-family: monospace;
+}
+
+.api-key-field:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+.save-key-btn {
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.save-key-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
 /* Future Features Badge */
 .future-badge {
   display: inline-block;

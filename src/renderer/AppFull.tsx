@@ -9,8 +9,10 @@ import { BasicPatternPlugin } from '../plugins/basic/BasicPatternPlugin';
 import { WikiLinksPlugin } from '../plugins/basic/WikiLinksPlugin';
 import './styles/app-full.css';
 
-// TypeScript declaration for the Electron API
-declare global {
+/// <reference path="./global.d.ts" />
+
+// Remove old duplicate type declaration (now using global.d.ts)
+/* declare global {
   interface Window {
     electronAPI: {
       readFile: (filePath: string) => Promise<{ success: boolean; content?: string; error?: string }>;
@@ -51,7 +53,7 @@ declare global {
       }>;
     };
   }
-}
+} */
 
 interface AppSettings {
   theme: 'light' | 'dark';
@@ -182,10 +184,10 @@ function AppFull() {
 
   const handleOpenFile = async () => {
     const result = await window.electronAPI.openFile();
-    if (result.success && result.filePath) {
-      const fileResult = await window.electronAPI.readFile(result.filePath);
+    if (!result.canceled && result.filePaths && result.filePaths.length > 0) {
+      const fileResult = await window.electronAPI.readFile(result.filePaths[0]);
       if (fileResult.success && fileResult.content) {
-        setActiveFile(result.filePath);
+        setActiveFile(result.filePaths[0]);
         setFileContent(fileResult.content);
       }
     }
@@ -224,7 +226,7 @@ function AppFull() {
 
   const handleSaveFileAs = async () => {
     const result = await window.electronAPI.saveFile(activeFile || 'untitled.md');
-    if (result.success && result.filePath) {
+    if (!result.canceled && result.filePath) {
       await window.electronAPI.writeFile(result.filePath, fileContent);
       setActiveFile(result.filePath);
     }

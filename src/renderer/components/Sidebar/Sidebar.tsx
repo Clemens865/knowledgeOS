@@ -23,8 +23,8 @@ const Sidebar: React.FC<SidebarProps> = ({ onFileSelect, activeFile }) => {
 
   const handleOpenFolder = async () => {
     const result = await window.electronAPI.openDirectory();
-    if (result.success && result.dirPath) {
-      setCurrentPath(result.dirPath);
+    if (!result.canceled && result.filePaths && result.filePaths.length > 0) {
+      setCurrentPath(result.filePaths[0]);
     }
   };
 

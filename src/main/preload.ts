@@ -55,5 +55,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getRecentWorkspaces: () => ipcRenderer.invoke('workspace:getRecent'),
   getCurrentWorkspace: () => ipcRenderer.invoke('workspace:getCurrent'),
   listFiles: (folderPath: string) => ipcRenderer.invoke('workspace:listFiles', folderPath),
-  createNote: (folderPath: string, fileName: string) => ipcRenderer.invoke('workspace:createNote', folderPath, fileName)
+  createNote: (folderPath: string, fileName: string) => ipcRenderer.invoke('workspace:createNote', folderPath, fileName),
+  
+  // LLM API
+  initializeLLM: (provider: any, workspacePath: string) => ipcRenderer.invoke('llm:initialize', provider, workspacePath),
+  sendMessageToLLM: (message: string, history: any[], context?: any) => ipcRenderer.invoke('llm:sendMessage', message, history, context),
+  setSystemPrompt: (prompt: string) => ipcRenderer.invoke('llm:setSystemPrompt', prompt),
+  getSystemPrompt: () => ipcRenderer.invoke('llm:getSystemPrompt'),
+  saveApiKey: (provider: string, apiKey: string) => ipcRenderer.invoke('llm:saveApiKey', provider, apiKey),
+  getApiKey: (provider: string) => ipcRenderer.invoke('llm:getApiKey', provider),
+  getLLMProviders: () => ipcRenderer.invoke('llm:getProviders')
 });

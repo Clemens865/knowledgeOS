@@ -1,6 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+/// <reference path="./global.d.ts" />
+import React, { useState, useEffect } from 'react';
 import WorkspaceModal from './components/WorkspaceModal/WorkspaceModal';
 import FileTree from './components/FileTree/FileTree';
+import Conversation from './components/Conversation/Conversation';
 import './styles/chat-app.css';
 
 interface AppSettings {
@@ -31,19 +33,20 @@ function ChatApp() {
   
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [sidebarTab, setSidebarTab] = useState<'files' | 'settings' | 'tools'>('files');
-  const [message, setMessage] = useState('');
   const [dynamicStatus, setDynamicStatus] = useState('');
   const [showStatus, setShowStatus] = useState(false);
-  const [voiceActive, setVoiceActive] = useState(false);
   const [showWorkspaceModal, setShowWorkspaceModal] = useState(false);
   const [currentWorkspace, setCurrentWorkspace] = useState<{ path: string; name: string } | null>(null);
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [selectedProvider, setSelectedProvider] = useState<string>('Claude');
+  const [selectedModel, setSelectedModel] = useState<string>('claude-3-sonnet-20240229');
+  const [apiKeys, setApiKeys] = useState<Record<string, string>>({});
 
   // Load settings and workspace on mount
   useEffect(() => {
     loadSettings();
     checkWorkspace();
+    loadApiKeys();
   }, []);
 
   // Apply theme
@@ -78,6 +81,24 @@ function ChatApp() {
       }
     } catch (error) {
       console.error('Error checking workspace:', error);
+    }
+  };
+
+  const loadApiKeys = async () => {
+    try {
+      const providers = ['Claude', 'OpenAI', 'Gemini'];
+      const keys: Record<string, string> = {};
+      
+      for (const provider of providers) {
+        const key = await window.electronAPI.getApiKey(provider);
+        if (key) {
+          keys[provider] = key;
+        }
+      }
+      
+      setApiKeys(keys);
+    } catch (error) {
+      console.error('Error loading API keys:', error);
     }
   };
 
@@ -139,31 +160,6 @@ function ChatApp() {
     // TODO: Load file content and display in editor/viewer
   };
 
-  const handleSendMessage = () => {
-    const trimmedMessage = message.trim();
-    if (trimmedMessage) {
-      showDynamicStatus('Processing...');
-      setMessage('');
-      if (textareaRef.current) {
-        textareaRef.current.style.height = 'auto';
-      }
-      setTimeout(() => showDynamicStatus('Complete'), 1500);
-    }
-  };
-
-  const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setMessage(e.target.value);
-    e.target.style.height = 'auto';
-    e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
-    }
-  };
-
   const toggleSwitch = (setting: keyof AppSettings) => {
     const newValue = !settings[setting];
     saveSettings({ ...settings, [setting]: newValue });
@@ -171,19 +167,7 @@ function ChatApp() {
     showDynamicStatus(`${name.charAt(0).toUpperCase() + name.slice(1)} ${newValue ? 'On' : 'Off'}`);
   };
 
-  // Voice visualization with Ctrl+Space
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.code === 'Space' && e.ctrlKey) {
-        e.preventDefault();
-        setVoiceActive(!voiceActive);
-        showDynamicStatus(voiceActive ? 'Voice Off' : 'Listening...');
-      }
-    };
-    
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [voiceActive]);
+  // Voice control removed for now - will implement later if needed
 
   return (
     <div className="app-container">
@@ -246,14 +230,6 @@ function ChatApp() {
               <span className="workspace-name">{currentWorkspace.name}</span>
             </div>
           )}
-          <div className="ai-provider-selector">
-            <select className="provider-select" aria-label="AI Provider">
-              <option>Claude Sonnet 3.5</option>
-              <option>Claude Opus</option>
-              <option>GPT-4</option>
-              <option>Local LLM</option>
-            </select>
-          </div>
         </div>
 
         {/* Tab Navigation */}
@@ -296,6 +272,97 @@ function ChatApp() {
           {/* Settings Tab */}
           {sidebarTab === 'settings' && (
             <div className="settings-tab advanced-settings">
+          {/* AI Settings */}
+          <div className="settings-section">
+            <h3 className="settings-title">AI Configuration</h3>
+            
+            <div className="setting-item">
+              <div className="setting-label">
+                <span className="setting-name">AI Provider</span>
+              </div>
+              <select 
+                className="provider-select"
+                value={selectedProvider}
+                onChange={(e) => {
+                  setSelectedProvider(e.target.value);
+                  // Update model based on provider
+                  if (e.target.value === 'Claude') {
+                    setSelectedModel('claude-3-sonnet-20240229');
+                  } else if (e.target.value === 'OpenAI') {
+                    setSelectedModel('gpt-4-turbo-preview');
+                  } else if (e.target.value === 'Gemini') {
+                    setSelectedModel('gemini-pro');
+                  }
+                }}
+              >
+                <option value="Claude">Claude</option>
+                <option value="OpenAI">OpenAI</option>
+                <option value="Gemini">Gemini</option>
+              </select>
+            </div>
+
+            <div className="setting-item">
+              <div className="setting-label">
+                <span className="setting-name">Model</span>
+              </div>
+              <select 
+                className="provider-select"
+                value={selectedModel}
+                onChange={(e) => setSelectedModel(e.target.value)}
+              >
+                {selectedProvider === 'Claude' && (
+                  <>
+                    <option value="claude-3-opus-20240229">Claude 3 Opus</option>
+                    <option value="claude-3-sonnet-20240229">Claude 3 Sonnet</option>
+                    <option value="claude-3-haiku-20240307">Claude 3 Haiku</option>
+                  </>
+                )}
+                {selectedProvider === 'OpenAI' && (
+                  <>
+                    <option value="gpt-4-turbo-preview">GPT-4 Turbo</option>
+                    <option value="gpt-4">GPT-4</option>
+                    <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                  </>
+                )}
+                {selectedProvider === 'Gemini' && (
+                  <>
+                    <option value="gemini-pro">Gemini Pro</option>
+                    <option value="gemini-pro-vision">Gemini Pro Vision</option>
+                  </>
+                )}
+              </select>
+            </div>
+
+            <div className="setting-item">
+              <div className="setting-label">
+                <span className="setting-name">API Key</span>
+              </div>
+              <div className="api-key-input">
+                <input 
+                  type="password"
+                  className="api-key-field"
+                  placeholder={`Enter ${selectedProvider} API Key`}
+                  value={apiKeys[selectedProvider] || ''}
+                  onChange={(e) => {
+                    const newKeys = { ...apiKeys, [selectedProvider]: e.target.value };
+                    setApiKeys(newKeys);
+                  }}
+                />
+                <button 
+                  className="save-key-btn"
+                  onClick={async () => {
+                    if (apiKeys[selectedProvider]) {
+                      await window.electronAPI.saveApiKey(selectedProvider, apiKeys[selectedProvider]);
+                      showDynamicStatus('API Key saved successfully');
+                    }
+                  }}
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
+
           {/* Appearance Settings */}
           <div className="settings-section">
             <h3 className="settings-title">Appearance</h3>
@@ -496,61 +563,18 @@ function ChatApp() {
 
       {/* Main Content */}
       <div className="main-content">
-        {/* Voice Visualizer */}
-        <div className={`voice-visualizer ${voiceActive ? 'active' : ''}`}>
-          <div className="voice-bar"></div>
-          <div className="voice-bar"></div>
-          <div className="voice-bar"></div>
-          <div className="voice-bar"></div>
-          <div className="voice-bar"></div>
-        </div>
-
-        <div className="chat-area">
-          <div className="welcome-content">
-            <h1>Welcome to KnowledgeOS</h1>
-            <p>Your intelligent knowledge management system with cutting-edge AI integration</p>
-
-            <div className="quick-actions">
-              <button className="quick-action" onClick={() => setShowWorkspaceModal(true)}>
-                {currentWorkspace ? 'Switch Workspace' : 'Open Workspace'}
-              </button>
-              <button className="quick-action" onClick={() => showDynamicStatus('Starting Creative Writing...')}>
-                Creative Writing
-              </button>
-              <button className="quick-action" onClick={() => showDynamicStatus('Starting Code Review...')}>
-                Code Review
-              </button>
-              <button className="quick-action" onClick={() => showDynamicStatus('Starting Research...')}>
-                Research Analysis
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Chat Input */}
-        <div className="chat-input-container">
-          <div className="chat-input-wrapper">
-            <textarea 
-              ref={textareaRef}
-              className="chat-input" 
-              placeholder="Ask me anything..." 
-              rows={1}
-              value={message}
-              onChange={handleTextareaChange}
-              onKeyDown={handleKeyDown}
-              aria-label="Message input"
-            />
-            <button 
-              className="send-button" 
-              onClick={handleSendMessage}
-              aria-label="Send message"
-            >
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                <path d="M15.964.686a.5.5 0 0 0-.65-.65L.767 5.855a.75.75 0 0 0-.124 1.329l4.995 3.178 3.178 4.995a.75.75 0 0 0 1.329-.124L15.964.686z"/>
-              </svg>
-            </button>
-          </div>
-        </div>
+        <Conversation 
+          currentWorkspace={currentWorkspace}
+          provider={
+            selectedProvider && apiKeys[selectedProvider] 
+              ? {
+                  name: selectedProvider,
+                  model: selectedModel,
+                  apiKey: apiKeys[selectedProvider]
+                }
+              : null
+          }
+        />
       </div>
 
       {/* Workspace Modal */}

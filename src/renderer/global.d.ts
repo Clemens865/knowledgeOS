@@ -56,6 +56,28 @@ interface ElectronAPI {
     error?: string; 
     exists?: boolean 
   }>;
+  
+  // LLM API
+  initializeLLM: (provider: LLMProvider, workspacePath: string) => Promise<{ success: boolean; error?: string }>;
+  sendMessageToLLM: (message: string, history: any[], context?: any) => Promise<{
+    success: boolean;
+    response?: string;
+    usage?: {
+      prompt_tokens: number;
+      completion_tokens: number;
+      total_tokens: number;
+    };
+    fileOperations?: any[];
+    error?: string;
+  }>;
+  setSystemPrompt: (prompt: string) => Promise<{ success: boolean; error?: string }>;
+  getSystemPrompt: () => Promise<string | null>;
+  saveApiKey: (provider: string, apiKey: string) => Promise<{ success: boolean; error?: string }>;
+  getApiKey: (provider: string) => Promise<string>;
+  getLLMProviders: () => Promise<Array<{
+    name: string;
+    models: string[];
+  }>>;
 }
 
 declare global {
@@ -65,3 +87,9 @@ declare global {
 }
 
 export {};
+
+interface LLMProvider {
+  name: string;
+  apiKey: string;
+  model: string;
+}

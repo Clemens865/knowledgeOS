@@ -8,49 +8,7 @@ import { PluginAPIImpl } from './services/PluginAPIImpl';
 import { BasicPatternPlugin } from '../plugins/basic/BasicPatternPlugin';
 import { WikiLinksPlugin } from '../plugins/basic/WikiLinksPlugin';
 
-// TypeScript declaration for the Electron API
-declare global {
-  interface Window {
-    electronAPI: {
-      readFile: (filePath: string) => Promise<{ success: boolean; content?: string; error?: string }>;
-      writeFile: (filePath: string, content: string) => Promise<{ success: boolean; error?: string }>;
-      listFiles: (dirPath: string) => Promise<{ success: boolean; files?: any[]; error?: string }>;
-      openFile: () => Promise<{ success: boolean; filePath?: string }>;
-      openDirectory: () => Promise<{ success: boolean; dirPath?: string }>;
-      saveFile: (defaultPath?: string) => Promise<{ success: boolean; filePath?: string }>;
-      getVersion: () => Promise<string>;
-      getPath: (name: string) => Promise<string>;
-      onMenuAction: (callback: (action: string) => void) => void;
-      removeAllListeners: () => void;
-      // Settings API (optional - may not be used in all components)
-      getSetting?: (key: string) => Promise<any>;
-      setSetting?: (key: string, value: any) => Promise<void>;
-      // Workspace API
-      selectFolder: () => Promise<{ canceled: boolean; filePaths?: string[] }>;
-      createWorkspace: (path: string) => Promise<{ success: boolean; error?: string }>;
-      openWorkspace: (path: string) => Promise<{ 
-        success: boolean; 
-        config?: any; 
-        path?: string; 
-        needsInit?: boolean; 
-        message?: string; 
-        error?: string 
-      }>;
-      getRecentWorkspaces: () => Promise<Array<{
-        path: string;
-        name: string;
-        lastOpened: string;
-      }>>;
-      getCurrentWorkspace: () => Promise<string | null>;
-      createNote: (folderPath: string, fileName: string) => Promise<{ 
-        success: boolean; 
-        path?: string; 
-        error?: string; 
-        exists?: boolean 
-      }>;
-    };
-  }
-}
+/// <reference path="./global.d.ts" />
 
 function App() {
   const [activeFile, setActiveFile] = useState<string | null>(null);
@@ -141,10 +99,10 @@ function App() {
 
   const handleOpenFile = async () => {
     const result = await window.electronAPI.openFile();
-    if (result.success && result.filePath) {
-      const fileResult = await window.electronAPI.readFile(result.filePath);
+    if (!result.canceled && result.filePaths && result.filePaths.length > 0) {
+      const fileResult = await window.electronAPI.readFile(result.filePaths[0]);
       if (fileResult.success && fileResult.content) {
-        setActiveFile(result.filePath);
+        setActiveFile(result.filePaths[0]);
         setFileContent(fileResult.content);
       }
     }
@@ -190,7 +148,7 @@ function App() {
 
   const handleSaveFileAs = async () => {
     const result = await window.electronAPI.saveFile(activeFile || 'untitled.md');
-    if (result.success && result.filePath) {
+    if (!result.canceled && result.filePath) {
       await window.electronAPI.writeFile(result.filePath, fileContent);
       setActiveFile(result.filePath);
     }

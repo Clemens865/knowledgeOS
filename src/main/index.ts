@@ -4,6 +4,7 @@ import { createWindow } from './window';
 import { setupIPC } from './ipc';
 import { createMenu } from './menu';
 import { setupWorkspaceHandlers } from './workspace';
+import { setupLLMHandlers } from './llmHandlers';
 import Store from 'electron-store';
 
 interface StoreSchema {
@@ -60,6 +61,7 @@ app.whenReady().then(() => {
   createMainWindow();
   setupIPC();
   setupWorkspaceHandlers();
+  setupLLMHandlers();
   createMenu();
 
   app.on('activate', () => {
