@@ -6,7 +6,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // File operations
   readFile: (filePath: string) => ipcRenderer.invoke('file:read', filePath),
   writeFile: (filePath: string, content: string) => ipcRenderer.invoke('file:write', filePath, content),
-  listFiles: (dirPath: string) => ipcRenderer.invoke('file:list', dirPath),
   
   // Dialog operations
   openFile: () => ipcRenderer.invoke('dialog:openFile'),
@@ -47,5 +46,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
   
   // Settings API
   getSetting: (key: string) => ipcRenderer.invoke('settings:get', key),
-  setSetting: (key: string, value: any) => ipcRenderer.invoke('settings:set', key, value)
+  setSetting: (key: string, value: any) => ipcRenderer.invoke('settings:set', key, value),
+  
+  // Workspace API
+  selectFolder: () => ipcRenderer.invoke('dialog:selectFolder'),
+  createWorkspace: (path: string) => ipcRenderer.invoke('workspace:create', path),
+  openWorkspace: (path: string) => ipcRenderer.invoke('workspace:open', path),
+  getRecentWorkspaces: () => ipcRenderer.invoke('workspace:getRecent'),
+  getCurrentWorkspace: () => ipcRenderer.invoke('workspace:getCurrent'),
+  listFiles: (folderPath: string) => ipcRenderer.invoke('workspace:listFiles', folderPath),
+  createNote: (folderPath: string, fileName: string) => ipcRenderer.invoke('workspace:createNote', folderPath, fileName)
 });

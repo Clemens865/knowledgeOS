@@ -26,6 +26,29 @@ declare global {
       // Settings API (optional - may not be used in all components)
       getSetting?: (key: string) => Promise<any>;
       setSetting?: (key: string, value: any) => Promise<void>;
+      // Workspace API
+      selectFolder: () => Promise<{ canceled: boolean; filePaths?: string[] }>;
+      createWorkspace: (path: string) => Promise<{ success: boolean; error?: string }>;
+      openWorkspace: (path: string) => Promise<{ 
+        success: boolean; 
+        config?: any; 
+        path?: string; 
+        needsInit?: boolean; 
+        message?: string; 
+        error?: string 
+      }>;
+      getRecentWorkspaces: () => Promise<Array<{
+        path: string;
+        name: string;
+        lastOpened: string;
+      }>>;
+      getCurrentWorkspace: () => Promise<string | null>;
+      createNote: (folderPath: string, fileName: string) => Promise<{ 
+        success: boolean; 
+        path?: string; 
+        error?: string; 
+        exists?: boolean 
+      }>;
     };
   }
 }

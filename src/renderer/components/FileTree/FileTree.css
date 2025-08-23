@@ -7,7 +7,6 @@
   display: flex;
   align-items: center;
   padding: 4px 8px;
-  cursor: pointer;
   user-select: none;
   transition: all 0.2s;
   border-radius: 4px;
@@ -23,10 +22,25 @@
   color: var(--text-primary);
 }
 
+.file-tree-item.is-folder .file-tree-name {
+  font-weight: 500;
+}
+
 .file-tree-icon {
   margin-right: 6px;
   font-size: 14px;
   flex-shrink: 0;
+  padding: 2px;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.file-tree-icon.clickable {
+  cursor: pointer;
+}
+
+.file-tree-icon.clickable:hover {
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .file-tree-name {
@@ -35,6 +49,14 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   color: var(--text-primary);
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.file-tree-name:hover {
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .file-tree-children {

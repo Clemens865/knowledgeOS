@@ -58,15 +58,46 @@ const FileTree: React.FC<FileTreeProps> = ({ rootPath, onFileSelect, activeFile 
     setLoading(false);
   };
 
-  const toggleDirectory = async (dirPath: string) => {
+  const toggleDirectory = async (dirPath: string, e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+    }
+    
     const newExpanded = new Set(expandedDirs);
-    if (newExpanded.has(dirPath)) {
+    const isCurrentlyExpanded = newExpanded.has(dirPath);
+    
+    if (isCurrentlyExpanded) {
       newExpanded.delete(dirPath);
+      setExpandedDirs(newExpanded);
     } else {
       newExpanded.add(dirPath);
+      setExpandedDirs(newExpanded);
+      
+      // Find the node and load its children if not already loaded
+      const findAndLoadNode = async (nodes: FileNode[]): Promise<void> => {
+        for (const node of nodes) {
+          if (node.path === dirPath && (!node.children || node.children.length === 0)) {
+            const childResult = await window.electronAPI.listFiles(dirPath);
+            if (childResult.success && childResult.files) {
+              node.children = childResult.files
+                .filter(f => !f.name.startsWith('.'))
+                .map(f => ({
+                  name: f.name,
+                  path: f.path,
+                  isDirectory: f.isDirectory
+                }));
+              setFiles([...files]); // Force re-render
+            }
+            return;
+          }
+          if (node.children) {
+            await findAndLoadNode(node.children);
+          }
+        }
+      };
+      
+      await findAndLoadNode(files);
     }
-    setExpandedDirs(newExpanded);
-    await loadFiles(rootPath);
   };
 
   const renderFileNode = (node: FileNode, level: number = 0) => {
@@ -76,24 +107,37 @@ const FileTree: React.FC<FileTreeProps> = ({ rootPath, onFileSelect, activeFile 
     return (
       <div key={node.path}>
         <div
-          className={`file-tree-item ${isActive ? 'active' : ''}`}
+          className={`file-tree-item ${isActive ? 'active' : ''} ${node.isDirectory ? 'is-folder' : ''}`}
           style={{ paddingLeft: `${level * 16 + 8}px` }}
-          onClick={() => {
-            if (node.isDirectory) {
-              toggleDirectory(node.path);
-            } else if (node.name.endsWith('.md')) {
-              onFileSelect(node.path);
-            }
-          }}
         >
-          <span className="file-tree-icon">
+          <span 
+            className="file-tree-icon clickable"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (node.isDirectory) {
+                toggleDirectory(node.path, e);
+              }
+            }}
+          >
             {node.isDirectory ? (
               isExpanded ? '📂' : '📁'
             ) : (
               node.name.endsWith('.md') ? '📝' : '📄'
             )}
           </span>
-          <span className="file-tree-name">{node.name}</span>
+          <span 
+            className="file-tree-name"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!node.isDirectory && node.name.endsWith('.md')) {
+                onFileSelect(node.path);
+              } else if (node.isDirectory) {
+                toggleDirectory(node.path, e);
+              }
+            }}
+          >
+            {node.name}
+          </span>
         </div>
         
         {node.isDirectory && isExpanded && node.children && (

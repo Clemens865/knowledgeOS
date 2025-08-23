@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
+import WorkspaceModal from './components/WorkspaceModal/WorkspaceModal';
+import FileTree from './components/FileTree/FileTree';
 import './styles/chat-app.css';
 
 interface AppSettings {
@@ -28,15 +30,20 @@ function ChatApp() {
   });
   
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [sidebarTab, setSidebarTab] = useState<'files' | 'settings' | 'tools'>('files');
   const [message, setMessage] = useState('');
   const [dynamicStatus, setDynamicStatus] = useState('');
   const [showStatus, setShowStatus] = useState(false);
   const [voiceActive, setVoiceActive] = useState(false);
+  const [showWorkspaceModal, setShowWorkspaceModal] = useState(false);
+  const [currentWorkspace, setCurrentWorkspace] = useState<{ path: string; name: string } | null>(null);
+  const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Load settings on mount
+  // Load settings and workspace on mount
   useEffect(() => {
     loadSettings();
+    checkWorkspace();
   }, []);
 
   // Apply theme
@@ -54,6 +61,34 @@ function ChatApp() {
       }
     } catch (error) {
       console.error('Error loading settings:', error);
+    }
+  };
+
+  const checkWorkspace = async () => {
+    try {
+      if (window.electronAPI?.getCurrentWorkspace) {
+        const workspace = await window.electronAPI.getCurrentWorkspace();
+        if (workspace) {
+          const name = workspace.split('/').pop() || 'Workspace';
+          setCurrentWorkspace({ path: workspace, name });
+        } else {
+          // No workspace, show modal
+          setShowWorkspaceModal(true);
+        }
+      }
+    } catch (error) {
+      console.error('Error checking workspace:', error);
+    }
+  };
+
+  const handleSelectWorkspace = async (path: string, name: string) => {
+    setCurrentWorkspace({ path, name });
+    setShowWorkspaceModal(false);
+    showDynamicStatus(`Workspace opened: ${name}`);
+    
+    // Save to settings
+    if (window.electronAPI?.setSetting) {
+      await window.electronAPI.setSetting('currentWorkspace', path);
     }
   };
 
@@ -96,6 +131,12 @@ function ChatApp() {
       }
     };
     input.click();
+  };
+
+  const handleFileSelect = async (filePath: string) => {
+    setSelectedFile(filePath);
+    showDynamicStatus(`Opened: ${filePath.split('/').pop()}`);
+    // TODO: Load file content and display in editor/viewer
   };
 
   const handleSendMessage = () => {
@@ -199,6 +240,12 @@ function ChatApp() {
       <div className={`sidebar ${isSidebarOpen ? 'expanded' : ''}`}>
         <div className="sidebar-header">
           <div className="logo">KnowledgeOS</div>
+          {currentWorkspace && (
+            <div className="workspace-indicator">
+              <span className="workspace-icon">📁</span>
+              <span className="workspace-name">{currentWorkspace.name}</span>
+            </div>
+          )}
           <div className="ai-provider-selector">
             <select className="provider-select" aria-label="AI Provider">
               <option>Claude Sonnet 3.5</option>
@@ -209,7 +256,46 @@ function ChatApp() {
           </div>
         </div>
 
-        <div className="advanced-settings">
+        {/* Tab Navigation */}
+        <div className="sidebar-tabs">
+          <button 
+            className={`tab-btn ${sidebarTab === 'files' ? 'active' : ''}`}
+            onClick={() => setSidebarTab('files')}
+          >
+            <span className="tab-icon">📁</span>
+            <span className="tab-label">Files</span>
+          </button>
+          <button 
+            className={`tab-btn ${sidebarTab === 'settings' ? 'active' : ''}`}
+            onClick={() => setSidebarTab('settings')}
+          >
+            <span className="tab-icon">⚙️</span>
+            <span className="tab-label">Settings</span>
+          </button>
+          <button 
+            className={`tab-btn ${sidebarTab === 'tools' ? 'active' : ''}`}
+            onClick={() => setSidebarTab('tools')}
+          >
+            <span className="tab-icon">🔧</span>
+            <span className="tab-label">Tools</span>
+          </button>
+        </div>
+
+        <div className="sidebar-content">
+          {/* Files Tab */}
+          {sidebarTab === 'files' && currentWorkspace && (
+            <div className="files-tab">
+              <FileTree 
+                rootPath={currentWorkspace.path}
+                onFileSelect={handleFileSelect}
+                activeFile={selectedFile}
+              />
+            </div>
+          )}
+
+          {/* Settings Tab */}
+          {sidebarTab === 'settings' && (
+            <div className="settings-tab advanced-settings">
           {/* Appearance Settings */}
           <div className="settings-section">
             <h3 className="settings-title">Appearance</h3>
@@ -372,6 +458,39 @@ function ChatApp() {
               </div>
             </div>
           </div>
+            </div>
+          )}
+
+          {/* Tools Tab */}
+          {sidebarTab === 'tools' && (
+            <div className="tools-tab">
+              <div className="tools-section">
+                <h3 className="settings-title">AI Tools</h3>
+                <div className="tools-list">
+                  <div className="tool-item">
+                    <span className="tool-icon">🧠</span>
+                    <span className="tool-name">Knowledge Graph</span>
+                    <span className="future-badge">Coming Soon</span>
+                  </div>
+                  <div className="tool-item">
+                    <span className="tool-icon">🔍</span>
+                    <span className="tool-name">Smart Search</span>
+                    <span className="future-badge">Coming Soon</span>
+                  </div>
+                  <div className="tool-item">
+                    <span className="tool-icon">📊</span>
+                    <span className="tool-name">Analytics</span>
+                    <span className="future-badge">Coming Soon</span>
+                  </div>
+                  <div className="tool-item">
+                    <span className="tool-icon">🔗</span>
+                    <span className="tool-name">Link Explorer</span>
+                    <span className="future-badge">Coming Soon</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -392,6 +511,9 @@ function ChatApp() {
             <p>Your intelligent knowledge management system with cutting-edge AI integration</p>
 
             <div className="quick-actions">
+              <button className="quick-action" onClick={() => setShowWorkspaceModal(true)}>
+                {currentWorkspace ? 'Switch Workspace' : 'Open Workspace'}
+              </button>
               <button className="quick-action" onClick={() => showDynamicStatus('Starting Creative Writing...')}>
                 Creative Writing
               </button>
@@ -400,9 +522,6 @@ function ChatApp() {
               </button>
               <button className="quick-action" onClick={() => showDynamicStatus('Starting Research...')}>
                 Research Analysis
-              </button>
-              <button className="quick-action" onClick={() => showDynamicStatus('Starting Knowledge Graph...')}>
-                Knowledge Graph
               </button>
             </div>
           </div>
@@ -433,6 +552,13 @@ function ChatApp() {
           </div>
         </div>
       </div>
+
+      {/* Workspace Modal */}
+      <WorkspaceModal
+        isOpen={showWorkspaceModal}
+        onClose={() => setShowWorkspaceModal(false)}
+        onSelectWorkspace={handleSelectWorkspace}
+      />
     </div>
   );
 }
