@@ -6,13 +6,19 @@ interface EditorProps {
   content: string;
   onChange: (value: string) => void;
   fileName?: string;
+  onEditorMount?: (editor: any) => void;
 }
 
-const Editor: React.FC<EditorProps> = ({ content, onChange, fileName = 'Untitled' }) => {
+const Editor: React.FC<EditorProps> = ({ content, onChange, fileName = 'Untitled', onEditorMount }) => {
   const editorRef = useRef<any>(null);
 
   const handleEditorDidMount = (editor: any, monaco: any) => {
     editorRef.current = editor;
+    
+    // Call the mount callback if provided
+    if (onEditorMount) {
+      onEditorMount(editor);
+    }
     
     // Configure Monaco
     monaco.languages.registerCompletionItemProvider('markdown', {

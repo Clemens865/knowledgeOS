@@ -1,8 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Editor from './components/Editor/Editor';
 import Sidebar from './components/Sidebar/Sidebar';
 import Chat from './components/Chat/Chat';
 import CommandPalette from './components/CommandPalette/CommandPalette';
+import { KnowledgeEngine } from '../core/KnowledgeEngine';
+import { PluginAPIImpl } from './services/PluginAPIImpl';
+import { BasicPatternPlugin } from '../plugins/basic/BasicPatternPlugin';
+import { WikiLinksPlugin } from '../plugins/basic/WikiLinksPlugin';
 
 // TypeScript declaration for the Electron API
 declare global {
@@ -28,6 +32,38 @@ function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  
+  const knowledgeEngineRef = useRef<KnowledgeEngine | null>(null);
+  const pluginAPIRef = useRef<PluginAPIImpl | null>(null);
+  const editorRef = useRef<any>(null);
+
+  // Initialize Knowledge Engine
+  useEffect(() => {
+    const initializeEngine = async () => {
+      // Create Plugin API
+      const api = new PluginAPIImpl();
+      pluginAPIRef.current = api;
+      
+      // Set up API callbacks
+      api.setFileContentSetter(setFileContent);
+      api.setFileOpener(handleFileSelect);
+      
+      // Create Knowledge Engine
+      const engine = new KnowledgeEngine(api);
+      knowledgeEngineRef.current = engine;
+      
+      // Load basic plugins
+      try {
+        await engine.use(new BasicPatternPlugin(api));
+        await engine.use(new WikiLinksPlugin(api));
+        console.log('Knowledge Engine initialized with plugins');
+      } catch (error) {
+        console.error('Error loading plugins:', error);
+      }
+    };
+    
+    initializeEngine();
+  }, []);
 
   useEffect(() => {
     // Listen for menu actions
@@ -82,6 +118,36 @@ function App() {
   const handleSaveFile = async () => {
     if (activeFile) {
       await window.electronAPI.writeFile(activeFile, fileContent);
+      
+      // Process content with Knowledge Engine
+      if (knowledgeEngineRef.current) {
+        try {
+          const result = await knowledgeEngineRef.current.process(fileContent, {
+            filePath: activeFile,
+            fileName: activeFile.split('/').pop(),
+            fileContent: fileContent,
+            timestamp: new Date()
+          });
+          
+          // Execute any file operations from plugins
+          if (result.operations && result.operations.length > 0) {
+            await knowledgeEngineRef.current.executeOperations(result.operations);
+            console.log(`Executed ${result.operations.length} operations from plugins`);
+          }
+          
+          // Show suggestions if any
+          if (result.suggestions && result.suggestions.length > 0) {
+            console.log('Plugin suggestions:', result.suggestions);
+          }
+        } catch (error) {
+          console.error('Error processing with Knowledge Engine:', error);
+        }
+      }
+      
+      // Emit file saved event
+      if (pluginAPIRef.current) {
+        pluginAPIRef.current.emitFileSaved(activeFile);
+      }
     } else {
       handleSaveFileAs();
     }
@@ -117,6 +183,12 @@ function App() {
           content={fileContent}
           onChange={setFileContent}
           fileName={activeFile ? activeFile.split('/').pop() : 'Untitled'}
+          onEditorMount={(editor: any) => {
+            editorRef.current = editor;
+            if (pluginAPIRef.current) {
+              pluginAPIRef.current.setEditorInstance(editor);
+            }
+          }}
         />
       </div>
       
