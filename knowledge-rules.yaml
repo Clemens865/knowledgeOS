@@ -1,0 +1,84 @@
+version: 1
+rules:
+  - name: Extract Tasks
+    pattern: 'TODO:\s*(.+)'
+    action: append
+    target: tasks/inbox.md
+    template: '- [ ] {{match}} ({{date}})'
+    priority: 10
+
+  - name: Track Meetings
+    pattern: 'Meeting with ([\w\s]+) about (.+)'
+    action: create
+    target: meetings/{{date}}-{{1}}.md
+    template: |
+      # Meeting with {{1}}
+      
+      Date: {{date}}
+      Topic: {{2}}
+      
+      ## Notes
+      {{match}}
+    priority: 9
+
+  - name: Personal Preferences
+    pattern: 'I (?:like|love|prefer|enjoy)\s+(.+)'
+    action: append
+    target: personal/preferences.md
+    template: '- {{match}} (noted on {{date}})'
+    priority: 8
+
+  - name: Decisions
+    pattern: '(?:Decided|Decision):\s*(.+)'
+    action: append
+    target: decisions/{{year}}-{{month}}.md
+    template: |
+      ## {{date}}
+      {{match}}
+    priority: 7
+
+  - name: Learning
+    pattern: '(?:TIL|I learned|Learned):\s*(.+)'
+    action: append
+    target: learning/til.md
+    template: |
+      ### {{date}}
+      {{match}}
+    priority: 6
+
+  - name: Ideas
+    pattern: 'Idea:\s*(.+)'
+    action: append
+    target: ideas/brainstorm.md
+    template: '- 💡 {{match}} ({{date}})'
+    priority: 5
+
+  - name: Questions
+    pattern: 'Question:\s*(.+)'
+    action: append
+    target: questions/open.md
+    template: '- ❓ {{match}} ({{date}})'
+    priority: 4
+
+  - name: Code Snippets
+    pattern: '```([\w]+)\n([\s\S]+?)```'
+    action: create
+    target: 'code/snippets/{{1}}-{{date}}.md'
+    template: |
+      # Code Snippet: {{1}}
+      
+      Date: {{date}}
+      
+      ```{{1}}
+      {{2}}
+      ```
+    priority: 3
+
+  - name: Project Notes
+    pattern: 'Project (\w+):\s*(.+)'
+    action: append
+    target: 'projects/{{1}}/notes.md'
+    template: |
+      ### {{date}}
+      {{2}}
+    priority: 2
