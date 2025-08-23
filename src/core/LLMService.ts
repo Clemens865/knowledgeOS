@@ -140,6 +140,12 @@ Always use these functions to maintain the knowledge base, but don't mention usi
         content: m.content
       }));
     
+    // Validate API key format
+    if (!this.provider.apiKey || !this.provider.apiKey.startsWith('sk-ant-')) {
+      console.error('Invalid Claude API key format. Key should start with "sk-ant-"');
+      throw new Error('Invalid Claude API key format. Please check your API key.');
+    }
+    
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -159,7 +165,8 @@ Always use these functions to maintain the knowledge base, but don't mention usi
     const data = await response.json();
     
     if (!response.ok) {
-      throw new Error(`Claude API error: ${data.error?.message || 'Unknown error'}`);
+      console.error('Claude API error:', data);
+      throw new Error(`Claude API error: ${data.error?.message || data.message || 'Unknown error'}`);
     }
     
     return this.parseClaudeResponse(data);

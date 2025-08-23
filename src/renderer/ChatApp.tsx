@@ -86,13 +86,23 @@ function ChatApp() {
 
   const loadApiKeys = async () => {
     try {
+      // Check if electronAPI is available
+      if (!window.electronAPI || !window.electronAPI.getApiKey) {
+        console.error('Electron API not available for getApiKey');
+        return;
+      }
+      
       const providers = ['Claude', 'OpenAI', 'Gemini'];
       const keys: Record<string, string> = {};
       
       for (const provider of providers) {
-        const key = await window.electronAPI.getApiKey(provider);
-        if (key) {
-          keys[provider] = key;
+        try {
+          const key = await window.electronAPI.getApiKey(provider);
+          if (key) {
+            keys[provider] = key;
+          }
+        } catch (err) {
+          console.error(`Error loading API key for ${provider}:`, err);
         }
       }
       
@@ -180,7 +190,7 @@ function ChatApp() {
             className="background-image"
             style={{
               opacity: settings.backgroundOpacity / 100,
-              filter: `blur(${settings.backgroundBlur}px)`
+              filter: settings.backgroundBlur > 0 ? `blur(${settings.backgroundBlur}px)` : 'none'
             }}
           />
           <div 
@@ -351,9 +361,24 @@ function ChatApp() {
                 <button 
                   className="save-key-btn"
                   onClick={async () => {
-                    if (apiKeys[selectedProvider]) {
-                      await window.electronAPI.saveApiKey(selectedProvider, apiKeys[selectedProvider]);
-                      showDynamicStatus('API Key saved successfully');
+                    try {
+                      if (!window.electronAPI || !window.electronAPI.saveApiKey) {
+                        console.error('Electron API not available for saveApiKey');
+                        showDynamicStatus('Error: API not available');
+                        return;
+                      }
+                      
+                      if (apiKeys[selectedProvider]) {
+                        const result = await window.electronAPI.saveApiKey(selectedProvider, apiKeys[selectedProvider]);
+                        if (result && result.success) {
+                          showDynamicStatus('API Key saved successfully');
+                        } else {
+                          showDynamicStatus(`Error: ${result?.error || 'Failed to save key'}`);
+                        }
+                      }
+                    } catch (error) {
+                      console.error('Error saving API key:', error);
+                      showDynamicStatus('Error saving API key');
                     }
                   }}
                 >
