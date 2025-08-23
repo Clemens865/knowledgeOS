@@ -13,7 +13,7 @@ import {
   ICommand,
   IUIComponent
 } from '../../core/interfaces';
-import { EventEmitter } from 'events';
+import { BrowserEventEmitter } from '../../core/BrowserEventEmitter';
 
 export class PluginAPIImpl implements PluginAPI {
   files: FileAPI;
@@ -23,7 +23,7 @@ export class PluginAPIImpl implements PluginAPI {
   events: EventAPI;
   commands: CommandAPI;
 
-  private eventEmitter: EventEmitter;
+  private eventEmitter: BrowserEventEmitter;
   private commandRegistry: Map<string, ICommand> = new Map();
   private localStorage: Map<string, any> = new Map();
   private editorInstance: any; // Monaco editor instance
@@ -31,7 +31,7 @@ export class PluginAPIImpl implements PluginAPI {
   private openFile?: (path: string) => void;
 
   constructor() {
-    this.eventEmitter = new EventEmitter();
+    this.eventEmitter = new BrowserEventEmitter();
     
     // Initialize FileAPI
     this.files = {

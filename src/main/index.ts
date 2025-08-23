@@ -1,10 +1,40 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, ipcMain } from 'electron';
 import * as path from 'path';
 import { createWindow } from './window';
 import { setupIPC } from './ipc';
 import { createMenu } from './menu';
+import Store from 'electron-store';
+
+interface StoreSchema {
+  appSettings: {
+    theme: 'light' | 'dark';
+    backgroundImage?: string;
+    backgroundOpacity: number;
+    backgroundBlur: number;
+  };
+}
 
 let mainWindow: BrowserWindow | null = null;
+
+// Initialize electron-store for settings with proper typing
+const store = new Store<StoreSchema>({
+  defaults: {
+    appSettings: {
+      theme: 'light',
+      backgroundOpacity: 0.3,
+      backgroundBlur: 0
+    }
+  }
+});
+
+// Setup settings IPC handlers
+ipcMain.handle('settings:get', (_, key: keyof StoreSchema) => {
+  return (store as any).get(key);
+});
+
+ipcMain.handle('settings:set', async (_, key: keyof StoreSchema, value: any) => {
+  (store as any).set(key, value);
+});
 
 const createMainWindow = () => {
   mainWindow = createWindow();

@@ -22,6 +22,9 @@ declare global {
       getPath: (name: string) => Promise<string>;
       onMenuAction: (callback: (action: string) => void) => void;
       removeAllListeners: () => void;
+      // Settings API (optional - may not be used in all components)
+      getSetting?: (key: string) => Promise<any>;
+      setSetting?: (key: string, value: any) => Promise<void>;
     };
   }
 }

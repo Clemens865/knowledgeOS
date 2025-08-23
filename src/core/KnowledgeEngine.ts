@@ -15,9 +15,9 @@ import {
   Enhancement,
   PluginAPI
 } from './interfaces';
-import { EventEmitter } from 'events';
+import { BrowserEventEmitter } from './BrowserEventEmitter';
 
-export class KnowledgeEngine extends EventEmitter {
+export class KnowledgeEngine extends BrowserEventEmitter {
   private plugins: Map<string, KnowledgePlugin> = new Map();
   private processors: IProcessor[] = [];
   private organizers: IOrganizer[] = [];

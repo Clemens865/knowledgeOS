@@ -43,5 +43,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.removeAllListeners('menu:commandPalette');
     ipcRenderer.removeAllListeners('menu:toggleSidebar');
     ipcRenderer.removeAllListeners('menu:toggleChat');
-  }
+  },
+  
+  // Settings API
+  getSetting: (key: string) => ipcRenderer.invoke('settings:get', key),
+  setSetting: (key: string, value: any) => ipcRenderer.invoke('settings:set', key, value)
 });

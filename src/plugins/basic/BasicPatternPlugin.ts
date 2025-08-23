@@ -10,9 +10,6 @@ import {
   FileOperation,
   PluginAPI
 } from '../../core/interfaces';
-import * as fs from 'fs/promises';
-import * as path from 'path';
-import * as yaml from 'js-yaml';
 
 interface PatternRule {
   name: string;
@@ -39,7 +36,7 @@ export class BasicPatternPlugin implements KnowledgePlugin {
 
   constructor(api: PluginAPI, rulesPath?: string) {
     this.api = api;
-    this.rulesPath = rulesPath || path.join(process.cwd(), 'knowledge-rules.yaml');
+    this.rulesPath = rulesPath || 'knowledge-rules.yaml';
   }
 
   processor: IProcessor = {
@@ -164,21 +161,53 @@ export class BasicPatternPlugin implements KnowledgePlugin {
       }
       
       const content = await this.api.files.read(this.rulesPath);
-      const config = yaml.load(content) as RulesConfig;
-      
-      if (config && config.rules) {
-        this.rules = config.rules.sort((a, b) => 
-          (b.priority || 0) - (a.priority || 0)
-        );
-        console.log(`Loaded ${this.rules.length} pattern rules`);
-      } else {
-        this.rules = [];
-        console.warn('No rules found in configuration');
+      // TODO: Parse YAML/JSON content when available
+      // For now, just use default rules
+      try {
+        const config = JSON.parse(content) as RulesConfig;
+        if (config && config.rules) {
+          this.rules = config.rules.sort((a, b) => 
+            (b.priority || 0) - (a.priority || 0)
+          );
+          console.log(`Loaded ${this.rules.length} pattern rules`);
+        } else {
+          this.rules = this.getDefaultRulesArray();
+        }
+      } catch {
+        // If parsing fails, use default rules
+        this.rules = this.getDefaultRulesArray();
       }
     } catch (error) {
       console.error('Error loading rules:', error);
       this.rules = [];
     }
+  }
+
+  private getDefaultRulesArray(): PatternRule[] {
+    return [
+      {
+        name: 'Extract TODOs',
+        pattern: 'TODO:\s*(.+)',
+        action: 'append',
+        target: 'todos/${year}-${month}-${day}.md',
+        template: '- [ ] ${match}',
+        priority: 10
+      },
+      {
+        name: 'Meeting Notes',
+        pattern: '@meeting\s+"([^"]+)"\s+(.+)',
+        action: 'create',
+        target: 'meetings/${year}/${month}/${1}.md',
+        template: '# Meeting: ${1}\n\nDate: ${date}\nTime: ${time}\n\n## Notes\n${2}',
+        priority: 20
+      },
+      {
+        name: 'Extract Questions',
+        pattern: '\?\?\s*(.+)',
+        action: 'extract',
+        priority: 5
+      }
+    ];
   }
 
   private async createDefaultRules(): Promise<void> {
@@ -228,12 +257,9 @@ export class BasicPatternPlugin implements KnowledgePlugin {
       ]
     };
     
-    const yamlContent = yaml.dump(defaultRules, { 
-      indent: 2,
-      lineWidth: -1 
-    });
-    
-    await this.api.files.write(this.rulesPath, yamlContent);
+    // Write as JSON for now
+    const jsonContent = JSON.stringify(defaultRules, null, 2);
+    await this.api.files.write(this.rulesPath, jsonContent);
     console.log('Created default rules file');
   }
 
@@ -255,7 +281,8 @@ export class BasicPatternPlugin implements KnowledgePlugin {
 
   private async fileExists(filePath: string): Promise<boolean> {
     try {
-      await fs.access(filePath);
+      // Use the plugin API to check if file exists
+      await this.api.files.read(filePath);
       return true;
     } catch {
       return false;

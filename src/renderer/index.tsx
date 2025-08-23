@@ -1,7 +1,10 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 // import App from './App';
-import AppSimple from './AppSimple';
+// import AppSimple from './AppSimple';
+// import AppFull from './AppFull';
+// import AppDebug from './AppDebug';
+import ChatApp from './ChatApp';
 // import TestApp from './TestApp';
 import './styles/globals.css';
 import './styles/glass.css';
@@ -21,7 +24,7 @@ console.log('Rendering React app...');
 try {
   root.render(
     <React.StrictMode>
-      <AppSimple />
+      <ChatApp />
     </React.StrictMode>
   );
 } catch (error) {

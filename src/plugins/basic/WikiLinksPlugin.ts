@@ -12,7 +12,6 @@ import {
   PluginAPI,
   ICommand
 } from '../../core/interfaces';
-import * as path from 'path';
 
 interface WikiLink {
   raw: string;           // Full match including brackets
@@ -245,8 +244,9 @@ export class WikiLinksPlugin implements KnowledgePlugin {
     
     // Otherwise, resolve relative to current file's directory
     if (currentFile) {
-      const dir = path.dirname(currentFile);
-      return path.join(dir, cleanTarget);
+      const lastSlash = currentFile.lastIndexOf('/');
+      const dir = lastSlash !== -1 ? currentFile.substring(0, lastSlash) : '';
+      return dir ? `${dir}/${cleanTarget}` : cleanTarget;
     }
     
     return cleanTarget;
@@ -295,9 +295,10 @@ export class WikiLinksPlugin implements KnowledgePlugin {
   }
 
   private formatBacklinks(backlinks: BacklinkData[]): string {
-    return backlinks.map(bl => 
-      `- [[${path.basename(bl.source, '.md')}]]: ${bl.context.substring(0, 100)}...`
-    ).join('\n');
+    return backlinks.map(bl => {
+      const sourceName = bl.source.split('/').pop()?.replace('.md', '') || bl.source;
+      return `- [[${sourceName}]]: ${bl.context.substring(0, 100)}...`;
+    }).join('\n');
   }
 
   private generateGraphData(): { nodes: any[], edges: any[] } {
@@ -306,7 +307,7 @@ export class WikiLinksPlugin implements KnowledgePlugin {
     const nodeSet = new Set<string>();
     
     for (const [source, links] of this.linkIndex) {
-      const sourceId = path.basename(source, '.md');
+      const sourceId = source.split('/').pop()?.replace('.md', '') || source;
       
       if (!nodeSet.has(sourceId)) {
         nodes.push({
@@ -369,7 +370,7 @@ export class WikiLinksPlugin implements KnowledgePlugin {
       const entries = await this.api.files.list(dir);
       
       for (const entry of entries) {
-        const fullPath = path.join(dir, entry);
+        const fullPath = `${dir}/${entry}`;
         
         if (entry.endsWith('.md')) {
           files.push(fullPath);
@@ -403,7 +404,8 @@ export class WikiLinksPlugin implements KnowledgePlugin {
   }
 
   private generateTemplate(fileName: string): string {
-    const title = path.basename(fileName, '.md')
+    const baseName = fileName.split('/').pop()?.replace('.md', '') || fileName;
+    const title = baseName
       .replace(/-/g, ' ')
       .replace(/_/g, ' ')
       .replace(/\b\w/g, c => c.toUpperCase());
