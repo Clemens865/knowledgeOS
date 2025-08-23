@@ -1,0 +1,50 @@
+{
+  "name": "knowledge-os",
+  "version": "0.1.0",
+  "description": "A revolutionary knowledge management platform combining VS Code, AI, and beautiful design",
+  "main": "dist/main/main/index.js",
+  "scripts": {
+    "start": "npm run build && electron .",
+    "dev": "npm run build:main && npm run build:renderer && electron .",
+    "build": "npm run build:main && npm run build:renderer",
+    "build:main": "tsc -p tsconfig.main.json",
+    "build:renderer": "webpack --config webpack.config.js",
+    "package": "electron-builder",
+    "test": "jest",
+    "lint": "eslint src/**/*.{ts,tsx}",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "knowledge-management",
+    "electron",
+    "monaco-editor",
+    "ai",
+    "markdown"
+  ],
+  "author": "KnowledgeOS Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Clemens865/knowledgeOS"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "@types/react": "^19.1.11",
+    "@types/react-dom": "^19.1.7",
+    "css-loader": "^7.1.2",
+    "electron": "^37.3.1",
+    "electron-builder": "^26.0.12",
+    "html-webpack-plugin": "^5.6.4",
+    "style-loader": "^4.0.0",
+    "ts-loader": "^9.5.2",
+    "typescript": "^5.9.2",
+    "webpack": "^5.101.3",
+    "webpack-cli": "^6.0.1"
+  },
+  "dependencies": {
+    "@monaco-editor/react": "^4.7.0",
+    "monaco-editor": "^0.52.2",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
+  }
+}

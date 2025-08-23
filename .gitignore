@@ -1,0 +1,66 @@
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+
+# Build outputs
+dist/
+build/
+out/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Electron
+electron-builder.yml
+dist_electron/
+
+# Testing
+coverage/
+.nyc_output/
+
+# Claude Flow / Swarm
+.swarm/
+.hive-mind/
+*.db
+*.sqlite
+
+# Local settings
+.claude/settings.local.json
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Knowledge base data (user data)
+knowledge-base/personal/
+knowledge-base/conversations/daily/
+knowledge-base/relationships/people/
+knowledge-base/temporal/events/
+knowledge-base/temporal/memories/
+knowledge-base/temporal/journal/
+knowledge-base/data/raw/
+knowledge-base/data/processed/

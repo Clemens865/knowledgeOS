@@ -1,0 +1,145 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  /* Light Theme - Crystalline Glass with Subtle Prism Effects */
+  --bg-primary: #fefefe;
+  --bg-secondary: #f8f9fa;
+  --bg-tertiary: #f0f1f3;
+  --text-primary: #1d1d1f;
+  --text-secondary: #86868b;
+  --text-accent: #8e7cc3;
+  --accent-gradient: linear-gradient(135deg, #8e7cc3 0%, #d4af37 50%, #c0c0c0 100%);
+  --border-color: rgba(0, 0, 0, 0.06);
+  --shadow-light: 0 2px 8px rgba(0, 0, 0, 0.04);
+  --shadow-medium: 0 12px 40px rgba(0, 0, 0, 0.08);
+  --shadow-heavy: 0 24px 80px rgba(0, 0, 0, 0.12);
+  
+  /* Enhanced Glass Effects */
+  --glass-bg: rgba(255, 255, 255, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.18);
+  --glass-reflection: linear-gradient(135deg, rgba(255, 255, 255, 0.5) 0%, transparent 60%);
+  --glass-frost: blur(20px) saturate(180%);
+  
+  /* UI Elements */
+  --hover-bg: rgba(0, 0, 0, 0.04);
+  --active-bg: rgba(142, 124, 195, 0.1);
+  --input-bg: rgba(255, 255, 255, 0.6);
+  --message-bg: rgba(0, 0, 0, 0.04);
+  --shortcut-bg: rgba(0, 0, 0, 0.06);
+  --accent-color: #8e7cc3;
+  --accent-shadow: rgba(142, 124, 195, 0.2);
+}
+
+[data-theme="dark"] {
+  /* Dark Theme - Obsidian Glass with Refined Metallic Tones */
+  --bg-primary: #0a0a0c;
+  --bg-secondary: #16161a;
+  --bg-tertiary: #242429;
+  --text-primary: #ffffff;
+  --text-secondary: #94949c;
+  --text-accent: #9d8cd6;
+  --accent-gradient: linear-gradient(135deg, #9d8cd6 0%, #f4d03f 50%, #e5e5e5 100%);
+  --border-color: rgba(255, 255, 255, 0.08);
+  --shadow-light: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-medium: 0 12px 40px rgba(0, 0, 0, 0.6);
+  --shadow-heavy: 0 24px 80px rgba(0, 0, 0, 0.8);
+  
+  /* Enhanced Glass Effects for Dark Mode */
+  --glass-bg: rgba(10, 10, 12, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-reflection: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, transparent 60%);
+  --glass-frost: blur(30px) saturate(150%);
+  
+  /* UI Elements */
+  --hover-bg: rgba(255, 255, 255, 0.06);
+  --active-bg: rgba(157, 140, 214, 0.15);
+  --input-bg: rgba(255, 255, 255, 0.08);
+  --message-bg: rgba(255, 255, 255, 0.06);
+  --shortcut-bg: rgba(255, 255, 255, 0.1);
+  --accent-color: #9d8cd6;
+  --accent-shadow: rgba(157, 140, 214, 0.3);
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.5;
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow: hidden;
+}
+
+.app-container {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  position: relative;
+}
+
+.app-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--glass-reflection);
+  pointer-events: none;
+}
+
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Scrollbar Styles */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+/* Selection */
+::selection {
+  background: var(--accent-color);
+  color: white;
+}
+
+/* Focus Styles */
+*:focus {
+  outline: none;
+}
+
+*:focus-visible {
+  outline: 2px solid var(--accent-color);
+  outline-offset: 2px;
+}
+
+/* Transitions */
+* {
+  transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow, transform;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
