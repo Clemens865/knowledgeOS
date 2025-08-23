@@ -22,7 +22,8 @@
   --glass-bg: rgba(255, 255, 255, 0.72);
   --glass-border: rgba(255, 255, 255, 0.18);
   --glass-reflection: linear-gradient(135deg, rgba(255, 255, 255, 0.5) 0%, transparent 60%);
-  --glass-frost: blur(20px) saturate(180%);
+  --glass-frost: saturate(180%);
+  --glass-frost-with-blur: blur(20px) saturate(180%);
   
   /* UI Elements */
   --hover-bg: rgba(0, 0, 0, 0.04);
@@ -52,7 +53,8 @@
   --glass-bg: rgba(10, 10, 12, 0.72);
   --glass-border: rgba(255, 255, 255, 0.12);
   --glass-reflection: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, transparent 60%);
-  --glass-frost: blur(30px) saturate(150%);
+  --glass-frost: saturate(150%);
+  --glass-frost-with-blur: blur(30px) saturate(150%);
   
   /* UI Elements */
   --hover-bg: rgba(255, 255, 255, 0.06);

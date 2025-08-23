@@ -67,11 +67,14 @@
 }
 
 .welcome-message h2 {
-  font-size: 28px;
-  margin-bottom: 12px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  font-size: 56px;
+  font-weight: 700;
+  letter-spacing: -0.05em;
+  margin-bottom: 16px;
+  background: linear-gradient(135deg, #8e7cc3 0%, #d4af37 50%, #c0c0c0 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .welcome-message p {
