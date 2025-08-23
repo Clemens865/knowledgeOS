@@ -37,6 +37,15 @@ function App() {
   const pluginAPIRef = useRef<PluginAPIImpl | null>(null);
   const editorRef = useRef<any>(null);
 
+  // Move handleFileSelect definition before the useEffect that uses it
+  const handleFileSelect = async (filePath: string) => {
+    const result = await window.electronAPI.readFile(filePath);
+    if (result.success && result.content) {
+      setActiveFile(filePath);
+      setFileContent(result.content);
+    }
+  };
+
   // Initialize Knowledge Engine
   useEffect(() => {
     const initializeEngine = async () => {
@@ -158,14 +167,6 @@ function App() {
     if (result.success && result.filePath) {
       await window.electronAPI.writeFile(result.filePath, fileContent);
       setActiveFile(result.filePath);
-    }
-  };
-
-  const handleFileSelect = async (filePath: string) => {
-    const result = await window.electronAPI.readFile(filePath);
-    if (result.success && result.content) {
-      setActiveFile(filePath);
-      setFileContent(result.content);
     }
   };
 
