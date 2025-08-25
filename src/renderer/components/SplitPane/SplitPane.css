@@ -1,0 +1,143 @@
+/* Split Pane Container */
+.split-pane {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.split-pane.dragging {
+  user-select: none;
+  cursor: col-resize;
+}
+
+.split-pane.split-horizontal.dragging {
+  cursor: row-resize;
+}
+
+/* Vertical Split */
+.split-vertical {
+  flex-direction: row;
+}
+
+/* Horizontal Split */
+.split-horizontal {
+  flex-direction: column;
+}
+
+/* Panes */
+.pane {
+  overflow: hidden;
+  position: relative;
+}
+
+.pane-first {
+  flex-shrink: 0;
+}
+
+.pane-second {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* Split Divider */
+.split-divider {
+  position: relative;
+  background: var(--glass-border);
+  transition: background 0.2s;
+  flex-shrink: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.split-vertical .split-divider {
+  width: 1px;
+  height: 100%;
+  cursor: col-resize;
+  padding: 0 4px;
+  margin: 0 -4px;
+}
+
+.split-horizontal .split-divider {
+  width: 100%;
+  height: 1px;
+  cursor: row-resize;
+  padding: 4px 0;
+  margin: -4px 0;
+}
+
+.split-divider:hover {
+  background: var(--accent-color);
+}
+
+.split-divider:hover .divider-handle {
+  opacity: 1;
+}
+
+/* Divider Handle */
+.divider-handle {
+  position: absolute;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: var(--text-secondary);
+  opacity: 0;
+  transition: opacity 0.2s;
+  box-shadow: var(--shadow-light);
+}
+
+.split-vertical .divider-handle {
+  width: 20px;
+  height: 40px;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.split-horizontal .divider-handle {
+  width: 40px;
+  height: 20px;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.split-pane.dragging .divider-handle {
+  opacity: 1;
+  background: var(--accent-color);
+  color: white;
+  border-color: var(--accent-color);
+}
+
+/* Responsive behavior */
+@media (max-width: 768px) {
+  .split-vertical {
+    flex-direction: column;
+  }
+  
+  .split-vertical .split-divider {
+    width: 100%;
+    height: 1px;
+    cursor: row-resize;
+    padding: 4px 0;
+    margin: -4px 0;
+  }
+  
+  .split-vertical .divider-handle {
+    width: 40px;
+    height: 20px;
+  }
+  
+  .pane-first {
+    width: auto !important;
+    height: 50%;
+  }
+}

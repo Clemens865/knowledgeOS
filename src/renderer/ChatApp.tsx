@@ -4,6 +4,8 @@ import WorkspaceModal from './components/WorkspaceModal/WorkspaceModal';
 import WorkspaceRulesModal from './components/WorkspaceRulesModal/WorkspaceRulesModal';
 import FileTree from './components/FileTree/FileTree';
 import Conversation from './components/Conversation/Conversation';
+import FileEditor from './components/FileEditor/FileEditor';
+import SplitPane from './components/SplitPane/SplitPane';
 import './styles/chat-app.css';
 
 interface AppSettings {
@@ -38,6 +40,9 @@ function ChatApp() {
   const [showStatus, setShowStatus] = useState(false);
   const [showWorkspaceModal, setShowWorkspaceModal] = useState(false);
   const [showWorkspaceRules, setShowWorkspaceRules] = useState(false);
+  const [showEditor, setShowEditor] = useState(false);
+  const [splitLayout, setSplitLayout] = useState<'vertical' | 'horizontal'>('vertical');
+  const [splitSize, setSplitSize] = useState('50%');
   const [currentWorkspace, setCurrentWorkspace] = useState<{ path: string; name: string } | null>(null);
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [selectedProvider, setSelectedProvider] = useState<string>('Claude');
@@ -68,6 +73,19 @@ function ChatApp() {
     
     return () => {
       window.electronAPI.removeAllListeners();
+    };
+  }, []);
+
+  // Handle file open events
+  useEffect(() => {
+    const handleFileOpen = () => {
+      setShowEditor(true);
+    };
+
+    window.addEventListener('open-file', handleFileOpen);
+    
+    return () => {
+      window.removeEventListener('open-file', handleFileOpen);
     };
   }, []);
 
@@ -605,18 +623,64 @@ function ChatApp() {
 
       {/* Main Content */}
       <div className="main-content">
-        <Conversation 
-          currentWorkspace={currentWorkspace}
-          provider={
-            selectedProvider && apiKeys[selectedProvider] 
-              ? {
-                  name: selectedProvider,
-                  model: selectedModel,
-                  apiKey: apiKeys[selectedProvider]
-                }
-              : null
-          }
-        />
+        {showEditor ? (
+          <SplitPane
+            split={splitLayout}
+            defaultSize={splitSize}
+            minSize={300}
+            onSplitChange={(size) => setSplitSize(`${size}%`)}
+          >
+            <FileEditor 
+              isOpen={true}
+              onClose={() => setShowEditor(false)}
+            />
+            <Conversation 
+              currentWorkspace={currentWorkspace}
+              provider={
+                selectedProvider && apiKeys[selectedProvider] 
+                  ? {
+                      name: selectedProvider,
+                      model: selectedModel,
+                      apiKey: apiKeys[selectedProvider]
+                    }
+                  : null
+              }
+            />
+          </SplitPane>
+        ) : (
+          <Conversation 
+            currentWorkspace={currentWorkspace}
+            provider={
+              selectedProvider && apiKeys[selectedProvider] 
+                ? {
+                    name: selectedProvider,
+                    model: selectedModel,
+                    apiKey: apiKeys[selectedProvider]
+                  }
+                : null
+            }
+          />
+        )}
+        
+        {/* Editor Toggle Button */}
+        <button
+          className="editor-toggle"
+          onClick={() => setShowEditor(!showEditor)}
+          title={showEditor ? 'Hide Editor' : 'Show Editor'}
+        >
+          {showEditor ? '✕' : '📝'}
+        </button>
+        
+        {/* Layout Toggle Button */}
+        {showEditor && (
+          <button
+            className="layout-toggle"
+            onClick={() => setSplitLayout(splitLayout === 'vertical' ? 'horizontal' : 'vertical')}
+            title={`Switch to ${splitLayout === 'vertical' ? 'Horizontal' : 'Vertical'} Layout`}
+          >
+            {splitLayout === 'vertical' ? '⬌' : '⬍'}
+          </button>
+        )}
       </div>
 
       {/* Workspace Modal */}

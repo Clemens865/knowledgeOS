@@ -129,8 +129,12 @@ const FileTree: React.FC<FileTreeProps> = ({ rootPath, onFileSelect, activeFile 
             className="file-tree-name"
             onClick={(e) => {
               e.stopPropagation();
-              if (!node.isDirectory && node.name.endsWith('.md')) {
+              if (!node.isDirectory) {
                 onFileSelect(node.path);
+                // Emit event for file editor
+                window.dispatchEvent(new CustomEvent('open-file', { 
+                  detail: { path: node.path } 
+                }));
               } else if (node.isDirectory) {
                 toggleDirectory(node.path, e);
               }
