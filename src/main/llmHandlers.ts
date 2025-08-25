@@ -13,6 +13,13 @@ export function setupLLMHandlers() {
   ipcMain.handle('llm:initialize', async (_, provider: LLMProvider, workspacePath: string) => {
     try {
       llmService = new LLMService(provider, workspacePath);
+      
+      // Load and set the saved system prompt if available
+      const savedPrompt = (store as any).get('systemPrompt');
+      if (savedPrompt) {
+        llmService.setSystemPrompt(savedPrompt);
+      }
+      
       return { success: true };
     } catch (error) {
       console.error('Error initializing LLM:', error);

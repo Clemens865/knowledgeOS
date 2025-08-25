@@ -25,7 +25,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
       'menu:saveAs',
       'menu:commandPalette',
       'menu:toggleSidebar',
-      'menu:toggleChat'
+      'menu:toggleChat',
+      'menu:workspaceRules'
     ];
     
     channels.forEach(channel => {
@@ -42,6 +43,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.removeAllListeners('menu:commandPalette');
     ipcRenderer.removeAllListeners('menu:toggleSidebar');
     ipcRenderer.removeAllListeners('menu:toggleChat');
+    ipcRenderer.removeAllListeners('menu:workspaceRules');
   },
   
   // Settings API

@@ -1,6 +1,7 @@
 /// <reference path="./global.d.ts" />
 import React, { useState, useEffect } from 'react';
 import WorkspaceModal from './components/WorkspaceModal/WorkspaceModal';
+import WorkspaceRulesModal from './components/WorkspaceRulesModal/WorkspaceRulesModal';
 import FileTree from './components/FileTree/FileTree';
 import Conversation from './components/Conversation/Conversation';
 import './styles/chat-app.css';
@@ -36,6 +37,7 @@ function ChatApp() {
   const [dynamicStatus, setDynamicStatus] = useState('');
   const [showStatus, setShowStatus] = useState(false);
   const [showWorkspaceModal, setShowWorkspaceModal] = useState(false);
+  const [showWorkspaceRules, setShowWorkspaceRules] = useState(false);
   const [currentWorkspace, setCurrentWorkspace] = useState<{ path: string; name: string } | null>(null);
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [selectedProvider, setSelectedProvider] = useState<string>('Claude');
@@ -53,6 +55,21 @@ function ChatApp() {
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', settings.theme);
   }, [settings.theme]);
+
+  // Handle menu actions
+  useEffect(() => {
+    const handleMenuAction = (action: string) => {
+      if (action === 'workspaceRules') {
+        setShowWorkspaceRules(true);
+      }
+    };
+
+    window.electronAPI.onMenuAction(handleMenuAction);
+    
+    return () => {
+      window.electronAPI.removeAllListeners();
+    };
+  }, []);
 
   const loadSettings = async () => {
     try {
@@ -607,6 +624,11 @@ function ChatApp() {
         isOpen={showWorkspaceModal}
         onClose={() => setShowWorkspaceModal(false)}
         onSelectWorkspace={handleSelectWorkspace}
+      />
+      
+      <WorkspaceRulesModal
+        isOpen={showWorkspaceRules}
+        onClose={() => setShowWorkspaceRules(false)}
       />
     </div>
   );

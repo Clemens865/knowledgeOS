@@ -53,6 +53,14 @@ export function createMenu() {
           }
         },
         { type: 'separator' },
+        {
+          label: 'Workspace Rules...',
+          accelerator: 'CmdOrCtrl+,',
+          click: () => {
+            BrowserWindow.getFocusedWindow()?.webContents.send('menu:workspaceRules');
+          }
+        },
+        { type: 'separator' },
         isMac ? { role: 'close' } : { role: 'quit' }
       ]
     },
