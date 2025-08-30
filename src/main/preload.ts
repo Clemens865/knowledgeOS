@@ -28,6 +28,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
       'menu:toggleChat',
       'menu:workspaceRules',
       'menu:apiKeys',
+      'menu:conversationModes',
       'menu:mcpServers',
       'menu:openProject',
       'menu:newProject',
@@ -49,6 +50,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.removeAllListeners('menu:toggleChat');
     ipcRenderer.removeAllListeners('menu:workspaceRules');
     ipcRenderer.removeAllListeners('menu:apiKeys');
+    ipcRenderer.removeAllListeners('menu:conversationModes');
     ipcRenderer.removeAllListeners('menu:mcpServers');
     ipcRenderer.removeAllListeners('menu:openProject');
     ipcRenderer.removeAllListeners('menu:newProject');
@@ -89,5 +91,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Analytics API
   analytics: {
     getStats: (workspacePath: string) => ipcRenderer.invoke('analytics:getStats', workspacePath)
+  },
+  
+  // Conversation Modes API
+  conversationModes: {
+    getAll: () => ipcRenderer.invoke('modes:getAll'),
+    create: (mode: any) => ipcRenderer.invoke('modes:create', mode),
+    update: (mode: any) => ipcRenderer.invoke('modes:update', mode),
+    delete: (modeId: string) => ipcRenderer.invoke('modes:delete', modeId),
+    reset: () => ipcRenderer.invoke('modes:reset'),
+    export: () => ipcRenderer.invoke('modes:export'),
+    import: (modes: any[]) => ipcRenderer.invoke('modes:import', modes),
+    getDefaultRules: () => ipcRenderer.invoke('modes:getDefaultRules')
   }
 });

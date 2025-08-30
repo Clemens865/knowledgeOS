@@ -4,6 +4,7 @@ import WorkspaceModal from './components/WorkspaceModal/WorkspaceModal';
 import WorkspaceRulesModal from './components/WorkspaceRulesModal/WorkspaceRulesModal';
 import APIKeysModal from './components/APIKeysModal/APIKeysModal';
 import { MCPServersModal } from './components/MCPServersModal/MCPServersModal';
+import ConversationModesModal from './components/ConversationModesModal/ConversationModesModal';
 import { AnalyticsView } from '../features/analytics/AnalyticsView';
 import { ConversationMode, DEFAULT_MODES } from '../core/ConversationModes';
 import FileTree from './components/FileTree/FileTree';
@@ -46,6 +47,7 @@ function ChatApp() {
   const [showWorkspaceRules, setShowWorkspaceRules] = useState(false);
   const [showAPIKeysModal, setShowAPIKeysModal] = useState(false);
   const [showMCPModal, setShowMCPModal] = useState(false);
+  const [showModesModal, setShowModesModal] = useState(false);
   const [modes, setModes] = useState<ConversationMode[]>(DEFAULT_MODES);
   const [currentMode, setCurrentMode] = useState<ConversationMode>(DEFAULT_MODES[0]);
   const [showEditor, setShowEditor] = useState(false);
@@ -65,6 +67,16 @@ function ChatApp() {
     loadApiKeys();
     loadConversationModes();
   }, []);
+  
+  // Set system prompt when currentMode changes
+  useEffect(() => {
+    const updateSystemPrompt = async () => {
+      if (currentMode && window.electronAPI?.setSystemPrompt) {
+        await window.electronAPI.setSystemPrompt(currentMode.systemPrompt);
+      }
+    };
+    updateSystemPrompt();
+  }, [currentMode]);
 
   // Apply theme
   useEffect(() => {
@@ -80,6 +92,8 @@ function ChatApp() {
         setShowAPIKeysModal(true);
       } else if (action === 'mcpServers') {
         setShowMCPModal(true);
+      } else if (action === 'conversationModes') {
+        setShowModesModal(true);
       } else if (action === 'openProject' || action === 'newProject') {
         setShowWorkspaceModal(true);
       }
@@ -149,11 +163,15 @@ function ChatApp() {
 
   const loadConversationModes = async () => {
     try {
-      if (window.electronAPI?.getSetting) {
-        const savedModes = await window.electronAPI.getSetting('conversationModes');
-        if (savedModes) {
-          setModes(savedModes);
-          setCurrentMode(savedModes[0]);
+      if (window.electronAPI?.conversationModes) {
+        const result = await window.electronAPI.conversationModes.getAll();
+        if (result.success && result.modes) {
+          setModes(result.modes);
+          // Keep current mode if it still exists, otherwise use first mode
+          const currentModeStillExists = result.modes.find(m => m.id === currentMode.id);
+          if (!currentModeStillExists && result.modes.length > 0) {
+            setCurrentMode(result.modes[0]);
+          }
         }
       }
     } catch (error) {
@@ -385,20 +403,46 @@ function ChatApp() {
               <div className="setting-label">
                 <span className="setting-name">Conversation Mode</span>
               </div>
-              <select 
-                className="provider-select"
-                value={currentMode.id}
-                onChange={(e) => {
-                  const mode = modes.find(m => m.id === e.target.value);
-                  if (mode) setCurrentMode(mode);
-                }}
-              >
-                {modes.map(mode => (
-                  <option key={mode.id} value={mode.id}>
-                    {mode.icon} {mode.name}
-                  </option>
-                ))}
-              </select>
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                <select 
+                  className="provider-select"
+                  value={currentMode.id}
+                  onChange={async (e) => {
+                    const mode = modes.find(m => m.id === e.target.value);
+                    if (mode) {
+                      setCurrentMode(mode);
+                      // Update the system prompt when mode changes
+                      if (window.electronAPI?.setSystemPrompt) {
+                        await window.electronAPI.setSystemPrompt(mode.systemPrompt);
+                      }
+                    }
+                  }}
+                  style={{ flex: 1 }}
+                >
+                  {modes.map(mode => (
+                    <option key={mode.id} value={mode.id}>
+                      {mode.icon} {mode.name}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  className="settings-button"
+                  onClick={() => setShowModesModal(true)}
+                  title="Manage Conversation Modes"
+                  style={{
+                    padding: '6px 12px',
+                    background: 'var(--accent-gradient)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: '13px',
+                    fontWeight: '500'
+                  }}
+                >
+                  Manage
+                </button>
+              </div>
             </div>
             
             <div className="setting-item">
@@ -826,6 +870,22 @@ function ChatApp() {
       <MCPServersModal
         isOpen={showMCPModal}
         onClose={() => setShowMCPModal(false)}
+      />
+      
+      <ConversationModesModal
+        isOpen={showModesModal}
+        onClose={() => setShowModesModal(false)}
+        currentMode={currentMode}
+        onModeSelect={async (mode) => {
+          setCurrentMode(mode);
+          // Update the system prompt when mode is selected
+          if (window.electronAPI?.setSystemPrompt) {
+            await window.electronAPI.setSystemPrompt(mode.systemPrompt);
+          }
+          setShowStatus(true);
+          setDynamicStatus(`Switched to ${mode.name} mode`);
+          setTimeout(() => setShowStatus(false), 3000);
+        }}
       />
     </div>
   );

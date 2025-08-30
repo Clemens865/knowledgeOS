@@ -6,6 +6,8 @@ export interface ConversationMode {
   systemPrompt: string;
   allowFileUpload?: boolean;
   supportedFileTypes?: string[];
+  includeDefaultRules?: boolean;
+  isCustom?: boolean;
 }
 
 export const DEFAULT_MODES: ConversationMode[] = [

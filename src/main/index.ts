@@ -6,6 +6,7 @@ import { createMenu } from './menu';
 import { setupWorkspaceHandlers } from './workspace';
 import { setupLLMHandlers } from './llmHandlers';
 import { setupAnalyticsHandlers } from './analyticsHandlers';
+import { setupConversationModesHandlers } from './conversationModesHandlers';
 import Store from 'electron-store';
 import { initMCPManager, getMCPManager } from './mcpManager';
 
@@ -109,6 +110,7 @@ app.whenReady().then(() => {
   setupWorkspaceHandlers();
   setupLLMHandlers();
   setupAnalyticsHandlers();
+  setupConversationModesHandlers();
   
   // Initialize MCP Manager
   initMCPManager();

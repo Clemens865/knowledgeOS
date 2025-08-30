@@ -10,7 +10,7 @@ const store = new Store();
 let llmService: LLMService | null = null;
 
 // Default Knowledge Rules for the system
-function getDefaultKnowledgeRules(): string {
+export function getDefaultKnowledgeRules(): string {
   return `You are an intelligent knowledge management assistant for KnowledgeOS. Your primary role is to help users organize and extract knowledge from their conversations.
 
 CRITICAL RULES FOR FILE OPERATIONS:

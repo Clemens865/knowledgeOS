@@ -93,6 +93,30 @@ interface ElectronAPI {
   analytics: {
     getStats: (workspacePath: string) => Promise<KnowledgeStats>;
   };
+  
+  // Conversation Modes API
+  conversationModes: {
+    getAll: () => Promise<{ success: boolean; modes?: ConversationMode[]; error?: string }>;
+    create: (mode: ConversationMode) => Promise<{ success: boolean; mode?: ConversationMode; error?: string }>;
+    update: (mode: ConversationMode) => Promise<{ success: boolean; mode?: ConversationMode; error?: string }>;
+    delete: (modeId: string) => Promise<{ success: boolean; error?: string }>;
+    reset: () => Promise<{ success: boolean; error?: string }>;
+    export: () => Promise<{ success: boolean; modes?: ConversationMode[]; error?: string }>;
+    import: (modes: ConversationMode[]) => Promise<{ success: boolean; importedCount?: number; error?: string }>;
+    getDefaultRules: () => Promise<{ success: boolean; rules?: string; error?: string }>;
+  };
+}
+
+interface ConversationMode {
+  id: string;
+  name: string;
+  icon: string;
+  description: string;
+  systemPrompt: string;
+  allowFileUpload?: boolean;
+  supportedFileTypes?: string[];
+  isCustom?: boolean;
+  includeDefaultRules?: boolean;
 }
 
 interface KnowledgeStats {

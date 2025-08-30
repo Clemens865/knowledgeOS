@@ -88,6 +88,13 @@ export function createMenu() {
           }
         },
         {
+          label: 'Conversation Modes...',
+          accelerator: 'CmdOrCtrl+Shift+C',
+          click: () => {
+            BrowserWindow.getFocusedWindow()?.webContents.send('menu:conversationModes');
+          }
+        },
+        {
           label: 'MCP Servers...',
           accelerator: 'CmdOrCtrl+Shift+M',
           click: () => {
