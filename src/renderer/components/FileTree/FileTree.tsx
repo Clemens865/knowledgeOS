@@ -23,6 +23,20 @@ const FileTree: React.FC<FileTreeProps> = ({ rootPath, onFileSelect, activeFile 
     loadFiles(rootPath);
   }, [rootPath]);
 
+  // Listen for file tree refresh events
+  useEffect(() => {
+    const handleRefreshFileTree = () => {
+      console.log('Refreshing file tree after file operation');
+      loadFiles(rootPath);
+    };
+
+    window.addEventListener('refresh-file-tree', handleRefreshFileTree);
+    
+    return () => {
+      window.removeEventListener('refresh-file-tree', handleRefreshFileTree);
+    };
+  }, [rootPath]);
+
   const loadFiles = async (path: string) => {
     setLoading(true);
     const result = await window.electronAPI.listFiles(path);
@@ -37,6 +51,7 @@ const FileTree: React.FC<FileTreeProps> = ({ rootPath, onFileSelect, activeFile 
               isDirectory: file.isDirectory
             };
             
+            // Preserve expanded state and reload children for expanded directories
             if (file.isDirectory && expandedDirs.has(file.path)) {
               const childResult = await window.electronAPI.listFiles(file.path);
               if (childResult.success && childResult.files) {

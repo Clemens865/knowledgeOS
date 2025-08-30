@@ -36,16 +36,16 @@ const WorkspaceModal: React.FC<WorkspaceModalProps> = ({ isOpen, onClose, onSele
       const result = await window.electronAPI.selectFolder();
       if (!result.canceled && result.filePaths?.[0]) {
         const path = result.filePaths[0];
-        const name = path.split('/').pop() || 'Workspace';
+        const name = path.split('/').pop() || 'Project';
         
-        // Create workspace structure
+        // Create project structure
         await window.electronAPI.createWorkspace(path);
         
-        // Select the new workspace
+        // Select the new project
         onSelectWorkspace(path, name);
       }
     } catch (error) {
-      console.error('Error creating workspace:', error);
+      console.error('Error creating project:', error);
     }
   };
 
@@ -54,7 +54,7 @@ const WorkspaceModal: React.FC<WorkspaceModalProps> = ({ isOpen, onClose, onSele
       const result = await window.electronAPI.selectFolder();
       if (!result.canceled && result.filePaths?.[0]) {
         const path = result.filePaths[0];
-        const name = path.split('/').pop() || 'Workspace';
+        const name = path.split('/').pop() || 'Project';
         onSelectWorkspace(path, name);
       }
     } catch (error) {
@@ -73,7 +73,7 @@ const WorkspaceModal: React.FC<WorkspaceModalProps> = ({ isOpen, onClose, onSele
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2>Welcome to KnowledgeOS</h2>
-          <p>Choose a workspace to store your knowledge</p>
+          <p>Choose a project to store your knowledge</p>
           <button className="modal-close" onClick={onClose}>
             <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
               <path d="M14.348 14.849a1.2 1.2 0 0 1-1.697 0L10 11.819l-2.651 3.029a1.2 1.2 0 1 1-1.697-1.697l2.758-3.15-2.759-3.152a1.2 1.2 0 1 1 1.697-1.697L10 8.183l2.651-3.031a1.2 1.2 0 1 1 1.697 1.697l-2.758 3.152 2.758 3.15a1.2 1.2 0 0 1 0 1.698z"/>
@@ -91,7 +91,7 @@ const WorkspaceModal: React.FC<WorkspaceModalProps> = ({ isOpen, onClose, onSele
                   <path d="M20 16v8m-4-4h8" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
                 </svg>
               </div>
-              <h3>Create New Workspace</h3>
+              <h3>Create New Project</h3>
               <p>Start fresh with a new knowledge base</p>
             </button>
 
@@ -101,7 +101,7 @@ const WorkspaceModal: React.FC<WorkspaceModalProps> = ({ isOpen, onClose, onSele
                   <path d="M8 16v12a4 4 0 004 4h16a4 4 0 004-4V16M8 16l4-6h6l2 6m14 0l-2-6h6l4 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </div>
-              <h3>Open Existing Workspace</h3>
+              <h3>Open Existing Project</h3>
               <p>Continue working with your knowledge</p>
             </button>
           </div>
@@ -109,7 +109,7 @@ const WorkspaceModal: React.FC<WorkspaceModalProps> = ({ isOpen, onClose, onSele
           {/* Recent Workspaces */}
           {recentWorkspaces.length > 0 && (
             <div className="recent-workspaces">
-              <h3 className="section-title">Recent Workspaces</h3>
+              <h3 className="section-title">Recent Projects</h3>
               <div className="recent-list">
                 {recentWorkspaces.map((workspace, index) => (
                   <button

@@ -1,11 +1,16 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow, ipcMain, nativeImage } from 'electron';
 import * as path from 'path';
 import { createWindow } from './window';
 import { setupIPC } from './ipc';
 import { createMenu } from './menu';
 import { setupWorkspaceHandlers } from './workspace';
 import { setupLLMHandlers } from './llmHandlers';
+import { setupAnalyticsHandlers } from './analyticsHandlers';
 import Store from 'electron-store';
+import { initMCPManager, getMCPManager } from './mcpManager';
+
+// Set the app name before anything else - MUST be done early!
+app.setName('KnowledgeOS');
 
 interface StoreSchema {
   appSettings: {
@@ -39,6 +44,8 @@ ipcMain.handle('settings:set', async (_, key: keyof StoreSchema, value: any) => 
 });
 
 const createMainWindow = () => {
+  // Set app name right before creating window
+  app.setName('KnowledgeOS');
   mainWindow = createWindow();
   
   // Load the app
@@ -58,10 +65,55 @@ const createMainWindow = () => {
 
 // This method will be called when Electron has finished initialization
 app.whenReady().then(() => {
+  // Ensure app name is set (belt and suspenders approach)
+  app.setName('KnowledgeOS');
+  
+  // Set dock icon for macOS
+  if (process.platform === 'darwin' && app.dock) {
+    // Try ICNS first, then fallback to PNG
+    const icnsPath = path.resolve(process.cwd(), 'assets/icons/icon.icns');
+    const pngPath = path.resolve(process.cwd(), 'assets/icons/icon.png');
+    
+    let iconSet = false;
+    
+    // Try ICNS format first
+    try {
+      const icnsIcon = nativeImage.createFromPath(icnsPath);
+      if (!icnsIcon.isEmpty()) {
+        app.dock.setIcon(icnsIcon);
+        console.log('✅ Dock icon set successfully from ICNS!');
+        iconSet = true;
+      }
+    } catch (error) {
+      console.warn('Could not load ICNS, trying PNG...');
+    }
+    
+    // Fallback to PNG if ICNS didn't work
+    if (!iconSet) {
+      try {
+        const pngIcon = nativeImage.createFromPath(pngPath);
+        if (!pngIcon.isEmpty()) {
+          app.dock.setIcon(pngIcon);
+          console.log('✅ Dock icon set successfully from PNG!');
+        } else {
+          console.warn('❌ Could not load icon from PNG either');
+        }
+      } catch (error) {
+        console.error('❌ Error setting dock icon:', error);
+      }
+    }
+  }
+
   createMainWindow();
   setupIPC();
   setupWorkspaceHandlers();
   setupLLMHandlers();
+  setupAnalyticsHandlers();
+  
+  // Initialize MCP Manager
+  initMCPManager();
+  console.log('🔌 MCP Manager initialized');
+  
   createMenu();
 
   app.on('activate', () => {
@@ -77,6 +129,15 @@ app.on('window-all-closed', () => {
   // On macOS, keep app running even when all windows are closed
   if (process.platform !== 'darwin') {
     app.quit();
+  }
+});
+
+// Clean up MCP connections on app quit
+app.on('before-quit', async () => {
+  const mcpManager = getMCPManager();
+  if (mcpManager) {
+    await mcpManager.cleanup();
+    console.log('🔌 MCP Manager cleaned up');
   }
 });
 

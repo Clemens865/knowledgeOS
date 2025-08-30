@@ -59,7 +59,7 @@ interface ElectronAPI {
   
   // LLM API
   initializeLLM: (provider: LLMProvider, workspacePath: string) => Promise<{ success: boolean; error?: string }>;
-  sendMessageToLLM: (message: string, history: any[], context?: any) => Promise<{
+  sendMessageToLLM: (message: string | any, history: any[], context?: any) => Promise<{
     success: boolean;
     response?: string;
     usage?: {
@@ -78,6 +78,61 @@ interface ElectronAPI {
     name: string;
     models: string[];
   }>>;
+  
+  // MCP API
+  mcp: {
+    getServers: () => Promise<MCPServer[]>;
+    addServer: (server: MCPServer) => Promise<{ success: boolean; error?: string }>;
+    removeServer: (name: string) => Promise<{ success: boolean; error?: string }>;
+    getTools: () => Promise<MCPTool[]>;
+    executeTool: (toolName: string, args: any) => Promise<{ success: boolean; result?: any; error?: string }>;
+    testConnection: (server: MCPServer) => Promise<{ success: boolean; message?: string; error?: string }>;
+  };
+  
+  // Analytics API
+  analytics: {
+    getStats: (workspacePath: string) => Promise<KnowledgeStats>;
+  };
+}
+
+interface KnowledgeStats {
+  totalNotes: number;
+  totalWords: number;
+  totalCharacters: number;
+  totalLinks: number;
+  averageNoteLength: number;
+  longestNote: { path: string; words: number } | null;
+  shortestNote: { path: string; words: number } | null;
+  recentNotes: Array<{
+    path: string;
+    name: string;
+    words: number;
+    modified: Date;
+    created: Date;
+    links: string[];
+    tags: string[];
+  }>;
+  topTags: { tag: string; count: number }[];
+  orphanedNotes: string[];
+  mostLinkedNotes: { path: string; linkCount: number }[];
+  folderStats: { [folder: string]: number };
+  dailyActivity: { date: string; notesModified: number }[];
+  growthOverTime: { date: string; totalNotes: number }[];
+}
+
+interface MCPServer {
+  name: string;
+  command: string;
+  args: string[];
+  env?: Record<string, string>;
+  enabled: boolean;
+}
+
+interface MCPTool {
+  name: string;
+  description: string;
+  inputSchema: any;
+  serverName: string;
 }
 
 declare global {

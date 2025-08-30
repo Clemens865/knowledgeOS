@@ -26,7 +26,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
       'menu:commandPalette',
       'menu:toggleSidebar',
       'menu:toggleChat',
-      'menu:workspaceRules'
+      'menu:workspaceRules',
+      'menu:apiKeys',
+      'menu:mcpServers',
+      'menu:openProject',
+      'menu:newProject',
     ];
     
     channels.forEach(channel => {
@@ -44,6 +48,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.removeAllListeners('menu:toggleSidebar');
     ipcRenderer.removeAllListeners('menu:toggleChat');
     ipcRenderer.removeAllListeners('menu:workspaceRules');
+    ipcRenderer.removeAllListeners('menu:apiKeys');
+    ipcRenderer.removeAllListeners('menu:mcpServers');
+    ipcRenderer.removeAllListeners('menu:openProject');
+    ipcRenderer.removeAllListeners('menu:newProject');
   },
   
   // Settings API
@@ -61,10 +69,25 @@ contextBridge.exposeInMainWorld('electronAPI', {
   
   // LLM API
   initializeLLM: (provider: any, workspacePath: string) => ipcRenderer.invoke('llm:initialize', provider, workspacePath),
-  sendMessageToLLM: (message: string, history: any[], context?: any) => ipcRenderer.invoke('llm:sendMessage', message, history, context),
+  sendMessageToLLM: (message: string | any, history: any[], context?: any) => ipcRenderer.invoke('llm:sendMessage', message, history, context),
   setSystemPrompt: (prompt: string) => ipcRenderer.invoke('llm:setSystemPrompt', prompt),
   getSystemPrompt: () => ipcRenderer.invoke('llm:getSystemPrompt'),
   saveApiKey: (provider: string, apiKey: string) => ipcRenderer.invoke('llm:saveApiKey', provider, apiKey),
   getApiKey: (provider: string) => ipcRenderer.invoke('llm:getApiKey', provider),
-  getLLMProviders: () => ipcRenderer.invoke('llm:getProviders')
+  getLLMProviders: () => ipcRenderer.invoke('llm:getProviders'),
+  
+  // MCP API
+  mcp: {
+    getServers: () => ipcRenderer.invoke('mcp:getServers'),
+    addServer: (server: any) => ipcRenderer.invoke('mcp:addServer', server),
+    removeServer: (name: string) => ipcRenderer.invoke('mcp:removeServer', name),
+    getTools: () => ipcRenderer.invoke('mcp:getTools'),
+    executeTool: (toolName: string, args: any) => ipcRenderer.invoke('mcp:executeTool', toolName, args),
+    testConnection: (server: any) => ipcRenderer.invoke('mcp:testConnection', server)
+  },
+  
+  // Analytics API
+  analytics: {
+    getStats: (workspacePath: string) => ipcRenderer.invoke('analytics:getStats', workspacePath)
+  }
 });

@@ -1,13 +1,24 @@
 /// <reference path="../../global.d.ts" />
 import React, { useState, useEffect, useRef } from 'react';
 import './Conversation.css';
+import { ConversationMode, DEFAULT_MODES } from '../../../core/ConversationModes';
 
 interface Message {
   id: string;
   role: 'user' | 'assistant';
-  content: string;
+  content: string | MessageContent[];
   timestamp: Date;
   isStreaming?: boolean;
+  displayContent?: string; // For UI display when content is complex
+}
+
+interface MessageContent {
+  type: 'text' | 'image_url';
+  text?: string;
+  image_url?: {
+    url: string;
+    detail?: 'low' | 'high' | 'auto';
+  };
 }
 
 interface ConversationProps {
@@ -17,33 +28,117 @@ interface ConversationProps {
     model: string;
     apiKey?: string;
   } | null;
+  currentMode?: ConversationMode;
 }
 
-const Conversation: React.FC<ConversationProps> = ({ currentWorkspace, provider }) => {
+const Conversation: React.FC<ConversationProps> = ({ currentWorkspace, provider, currentMode }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [conversationId, setConversationId] = useState<string>('');
+  const activeMode = currentMode || DEFAULT_MODES[0];
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Initialize LLM when provider or workspace changes
+  // Load conversation history on mount
+  useEffect(() => {
+    loadConversationHistory();
+  }, [currentWorkspace]);
+
+  // Save conversation history when messages change
+  useEffect(() => {
+    if (messages.length > 0 && conversationId) {
+      saveConversationHistory();
+    }
+  }, [messages, conversationId]);
+
+  // Initialize LLM when provider, workspace, or mode changes
   useEffect(() => {
     if (currentWorkspace && provider && provider.apiKey) {
       initializeLLM();
     }
-  }, [currentWorkspace, provider]);
+  }, [currentWorkspace, provider, currentMode]);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  const loadConversationHistory = () => {
+    if (!currentWorkspace) return;
+    
+    try {
+      // Create a unique conversation ID based on workspace
+      const convId = `conversation-${currentWorkspace.path.replace(/[^a-z0-9]/gi, '-')}`;
+      setConversationId(convId);
+      
+      // Load from localStorage
+      const saved = localStorage.getItem(convId);
+      if (saved) {
+        const parsedMessages = JSON.parse(saved);
+        // Only load messages from the last 24 hours to keep conversations fresh
+        const oneDayAgo = new Date();
+        oneDayAgo.setDate(oneDayAgo.getDate() - 1);
+        
+        const recentMessages = parsedMessages.filter((msg: any) => {
+          return new Date(msg.timestamp) > oneDayAgo;
+        }).map((msg: any) => ({
+          ...msg,
+          timestamp: new Date(msg.timestamp)
+        }));
+        
+        setMessages(recentMessages);
+        console.log(`Loaded ${recentMessages.length} recent messages from conversation history`);
+      }
+    } catch (error) {
+      console.error('Error loading conversation history:', error);
+    }
+  };
+
+  const saveConversationHistory = () => {
+    if (!conversationId) return;
+    
+    try {
+      // Save to localStorage (with size limit)
+      const toSave = messages.slice(-50); // Keep last 50 messages
+      localStorage.setItem(conversationId, JSON.stringify(toSave));
+    } catch (error) {
+      console.error('Error saving conversation history:', error);
+    }
+  };
+
   const initializeLLM = async () => {
-    if (!currentWorkspace || !provider || !provider.apiKey) return;
+    if (!currentWorkspace) {
+      setError('No project selected. Please open a project first (File → Open Project).');
+      setIsInitialized(false);
+      return;
+    }
+    
+    if (!provider) {
+      setError('No AI provider selected. Please select a provider in the settings.');
+      setIsInitialized(false);
+      return;
+    }
+    
+    if (!provider.apiKey) {
+      setError(`No API key configured for ${provider.name}. Please add your API key in File → API Keys (Cmd+Shift+K).`);
+      setIsInitialized(false);
+      return;
+    }
 
     try {
+      console.log('Initializing LLM with mode:', activeMode.name);
+      console.log('Provider:', provider.name, 'Model:', provider.model, 'Workspace:', currentWorkspace.path);
+      console.log('System prompt (first 200 chars):', activeMode.systemPrompt.substring(0, 200));
+      
+      // Set the system prompt based on current mode
+      const promptResult = await window.electronAPI.setSystemPrompt(activeMode.systemPrompt);
+      console.log('System prompt set result:', promptResult);
+      
       const result = await window.electronAPI.initializeLLM(
         {
           name: provider.name,
@@ -56,23 +151,106 @@ const Conversation: React.FC<ConversationProps> = ({ currentWorkspace, provider 
       if (result.success) {
         setIsInitialized(true);
         setError(null);
+        console.log('LLM initialized successfully');
       } else {
-        setError(result.error || 'Failed to initialize LLM');
+        const errorMsg = result.error || 'Failed to initialize LLM';
+        setError(errorMsg);
         setIsInitialized(false);
+        console.error('LLM initialization failed:', errorMsg);
       }
     } catch (err) {
-      setError('Error initializing LLM: ' + (err as Error).message);
+      const errorMsg = 'Error initializing LLM: ' + (err as Error).message;
+      setError(errorMsg);
       setIsInitialized(false);
+      console.error(errorMsg, err);
     }
   };
 
   const sendMessage = async () => {
-    if (!inputMessage.trim() || isLoading || !isInitialized) return;
+    if ((!inputMessage.trim() && uploadedFiles.length === 0) || isLoading || !isInitialized) return;
+    
+    // Prepare message content
+    let messageContent: string | MessageContent[] = inputMessage.trim();
+    let displayContent = inputMessage.trim();
+    
+    // Handle attachments for vision-capable models
+    if (uploadedFiles.length > 0) {
+      const hasImages = uploadedFiles.some(f => f.type.startsWith('image/'));
+      // Check if using a vision-capable model
+      const isVisionModel = provider?.model?.includes('vision') || 
+                           provider?.model?.includes('gpt-4o') || 
+                           provider?.model === 'gpt-4-turbo' ||
+                           provider?.model === 'gpt-4-turbo-preview' ||
+                           provider?.model === 'gemini-pro-vision';
+      
+      if (hasImages && isVisionModel) {
+        // Use structured content for vision models
+        const contentArray: MessageContent[] = [];
+        
+        // Add text if present
+        if (inputMessage.trim()) {
+          contentArray.push({ type: 'text', text: inputMessage.trim() });
+        }
+        
+        // Add images
+        for (const file of uploadedFiles) {
+          if (file.type.startsWith('image/')) {
+            const dataUrl = await readFileContent(file);
+            contentArray.push({
+              type: 'image_url',
+              image_url: {
+                url: dataUrl,
+                detail: 'auto'
+              }
+            });
+            displayContent += `\n🖼️ [Image: ${file.name}]`;
+          } else {
+            // For non-image files, add as text
+            const content = await readFileContent(file);
+            const maxContentLength = 10000;
+            const truncatedContent = content.length > maxContentLength 
+              ? content.substring(0, maxContentLength) + '\n... (content truncated)'
+              : content;
+            contentArray.push({ 
+              type: 'text', 
+              text: `\n📄 File: ${file.name}\nContent:\n${truncatedContent}` 
+            });
+            displayContent += `\n📄 [File: ${file.name}]`;
+          }
+        }
+        
+        messageContent = contentArray;
+      } else {
+        // Fallback to text-only format for non-vision models
+        displayContent += '\n\n--- Attached Files ---\n';
+        
+        for (const file of uploadedFiles) {
+          const content = await readFileContent(file);
+          displayContent += `\n📄 File: ${file.name} (${file.type || 'unknown'})\n`;
+          
+          if (file.type.startsWith('image/')) {
+            displayContent += `⚠️ [Image attachments require a vision-capable model like gpt-4-vision-preview, gpt-4o, or gemini-pro-vision]\n`;
+            messageContent += `\n[Image: ${file.name} - Please use a vision model like gpt-4-vision-preview, gpt-4o, or gemini-pro-vision to view images]`;
+          } else {
+            const maxContentLength = 10000;
+            const truncatedContent = content.length > maxContentLength 
+              ? content.substring(0, maxContentLength) + '\n... (content truncated)'
+              : content;
+            displayContent += `\nContent:\n${truncatedContent}\n`;
+            messageContent += `\n📄 File: ${file.name}\nContent:\n${truncatedContent}`;
+          }
+        }
+      }
+      
+      // Clear uploaded files after including them
+      setUploadedFiles([]);
+    }
 
     const userMessage: Message = {
       id: generateId(),
       role: 'user',
-      content: inputMessage.trim(),
+      content: messageContent,
+      displayContent: displayContent,
       timestamp: new Date()
     };
 
@@ -119,10 +297,20 @@ const Conversation: React.FC<ConversationProps> = ({ currentWorkspace, provider 
           window.dispatchEvent(new CustomEvent('refresh-file-tree'));
         }
       } else {
-        setError(result.error || 'Failed to get response from LLM');
+        const errorMsg = result.error || 'Failed to get response from LLM';
+        setError(errorMsg);
+        console.error('LLM response error:', errorMsg);
+        
+        // Re-initialize if needed
+        if (errorMsg.includes('not initialized')) {
+          console.log('Attempting to re-initialize LLM...');
+          await initializeLLM();
+        }
       }
     } catch (err) {
-      setError('Error sending message: ' + (err as Error).message);
+      const errorMsg = 'Error sending message: ' + (err as Error).message;
+      setError(errorMsg);
+      console.error(errorMsg, err);
     } finally {
       setIsLoading(false);
     }
@@ -153,8 +341,70 @@ const Conversation: React.FC<ConversationProps> = ({ currentWorkspace, provider 
     });
   };
 
-  const clearConversation = () => {
+  const clearConversation = async () => {
+    // Save current conversation to a markdown file before clearing
+    if (messages.length > 0 && currentWorkspace) {
+      try {
+        // Create conversation log in daily folder
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const filename = `conversation-${timestamp}.md`;
+        const filepath = `daily/${filename}`;
+        
+        // Format conversation as markdown
+        let content = `# Conversation Log\n\n`;
+        content += `**Date**: ${new Date().toLocaleString()}\n`;
+        content += `**Workspace**: ${currentWorkspace.name}\n\n`;
+        content += `---\n\n`;
+        
+        messages.forEach(msg => {
+          const role = msg.role === 'user' ? '👤 You' : '🤖 AI';
+          const time = formatTime(msg.timestamp);
+          content += `### ${role} (${time})\n\n`;
+          content += `${msg.content}\n\n`;
+        });
+        
+        // Send to LLM to save (it will handle the file operation)
+        console.log('Saving conversation log to:', filepath);
+        
+        // Clear localStorage for this conversation
+        if (conversationId) {
+          localStorage.removeItem(conversationId);
+        }
+      } catch (error) {
+        console.error('Error saving conversation log:', error);
+      }
+    }
+    
+    // Clear messages
     setMessages([]);
+  };
+
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+    
+    const fileList = Array.from(files);
+    setUploadedFiles(prev => [...prev, ...fileList]);
+    
+    // Clear the input so the same file can be selected again
+    event.target.value = '';
+  };
+
+  const readFileContent = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        resolve(e.target?.result as string);
+      };
+      reader.onerror = reject;
+      
+      if (file.type.startsWith('image/')) {
+        reader.readAsDataURL(file);
+      } else {
+        reader.readAsText(file);
+      }
+    });
   };
 
   if (!currentWorkspace) {
@@ -192,13 +442,21 @@ const Conversation: React.FC<ConversationProps> = ({ currentWorkspace, provider 
           <span className="workspace-badge">
             📁 {currentWorkspace.name}
           </span>
+          <span className="mode-badge" title={activeMode.description}>
+            {activeMode.icon} {activeMode.name}
+          </span>
+          {messages.length > 0 && (
+            <span className="conversation-status" title="Conversation history is automatically saved">
+              💬 Ongoing conversation
+            </span>
+          )}
         </div>
         <button 
           className="clear-btn"
           onClick={clearConversation}
-          title="Clear conversation"
+          title="Start new conversation (current conversation will be saved to daily folder)"
         >
-          🗑️
+          🆕
         </button>
       </div>
 
@@ -206,7 +464,7 @@ const Conversation: React.FC<ConversationProps> = ({ currentWorkspace, provider 
       <div className="messages-container">
         {messages.length === 0 ? (
           <div className="welcome-message">
-            <h2>Welcome to KnowledgeOS</h2>
+            <h2>Welcome back to KnowledgeOS</h2>
             <p>Start a conversation and I'll automatically organize your knowledge</p>
             <div className="tips">
               <div className="tip">
@@ -217,6 +475,9 @@ const Conversation: React.FC<ConversationProps> = ({ currentWorkspace, provider 
               </div>
               <div className="tip">
                 🔗 I'll create connections between related concepts
+              </div>
+              <div className="tip">
+                💬 Our conversation continues across sessions - I remember our previous chats!
               </div>
             </div>
           </div>
@@ -236,7 +497,7 @@ const Conversation: React.FC<ConversationProps> = ({ currentWorkspace, provider 
                   </span>
                 </div>
                 <div className="message-content">
-                  {message.content}
+                  {message.displayContent || (typeof message.content === 'string' ? message.content : '[Complex content with images]')}
                 </div>
               </div>
             ))}
@@ -264,8 +525,44 @@ const Conversation: React.FC<ConversationProps> = ({ currentWorkspace, provider 
         </div>
       )}
 
+      {/* File Upload Area */}
+      {
+        <div className="file-upload-area">
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept={activeMode.supportedFileTypes?.join(',') || '*'}
+            onChange={handleFileUpload}
+            style={{ display: 'none' }}
+          />
+          {uploadedFiles.length > 0 && (
+            <div className="uploaded-files">
+              {uploadedFiles.map((file, index) => (
+                <span key={index} className="uploaded-file">
+                  📄 {file.name}
+                  <button 
+                    className="remove-file-btn"
+                    onClick={() => setUploadedFiles(prev => prev.filter((_, i) => i !== index))}
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      }
+
       {/* Input area */}
       <div className="input-container">
+        <button
+          className="attach-btn"
+          onClick={() => fileInputRef.current?.click()}
+          title="Attach files"
+        >
+          📎
+        </button>
         <textarea
           ref={textareaRef}
           value={inputMessage}
@@ -273,7 +570,7 @@ const Conversation: React.FC<ConversationProps> = ({ currentWorkspace, provider 
           onKeyDown={handleKeyDown}
           placeholder={
             isInitialized 
-              ? "Type your message... (Shift+Enter for new line)"
+              ? "Type your message... (Shift+Enter for new line, no length limit)"
               : "Initializing AI..."
           }
           disabled={!isInitialized || isLoading}

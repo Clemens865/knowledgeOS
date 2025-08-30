@@ -1,5 +1,6 @@
 {
   "name": "knowledge-os",
+  "productName": "KnowledgeOS",
   "version": "0.1.0",
   "description": "A revolutionary knowledge management platform combining VS Code, AI, and beautiful design",
   "main": "dist/main/main/index.js",
@@ -43,11 +44,50 @@
     "webpack-cli": "^6.0.1"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.17.4",
     "@monaco-editor/react": "^4.7.0",
     "electron-store": "^10.1.0",
     "js-yaml": "^4.1.0",
     "monaco-editor": "^0.52.2",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"
+  },
+  "build": {
+    "appId": "com.knowledgeos.app",
+    "productName": "KnowledgeOS",
+    "directories": {
+      "output": "dist-app",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**/*",
+      "assets/**/*",
+      "public/**/*",
+      "package.json"
+    ],
+    "mac": {
+      "icon": "assets/icons/icon.icns",
+      "category": "public.app-category.productivity",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "extendInfo": {
+        "CFBundleName": "KnowledgeOS",
+        "CFBundleDisplayName": "KnowledgeOS"
+      }
+    },
+    "win": {
+      "icon": "assets/icons/icon.ico",
+      "target": [
+        "nsis"
+      ]
+    },
+    "linux": {
+      "icon": "assets/icons",
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Utility"
+    }
   }
 }

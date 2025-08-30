@@ -1,4 +1,4 @@
-import { Menu, app, shell, BrowserWindow } from 'electron';
+import { Menu, shell, BrowserWindow } from 'electron';
 
 export function createMenu() {
   const isMac = process.platform === 'darwin';
@@ -6,9 +6,9 @@ export function createMenu() {
   const template: Electron.MenuItemConstructorOptions[] = [
     // App Menu (macOS only)
     ...(isMac ? [{
-      label: app.getName(),
+      label: 'KnowledgeOS',
       submenu: [
-        { role: 'about' as const },
+        { role: 'about' as const, label: 'About KnowledgeOS' },
         { type: 'separator' as const },
         { role: 'services' as const, submenu: [] },
         { type: 'separator' as const },
@@ -24,6 +24,26 @@ export function createMenu() {
     {
       label: 'File',
       submenu: [
+        {
+          label: 'Open Project...',
+          accelerator: 'CmdOrCtrl+Shift+O',
+          click: () => {
+            BrowserWindow.getFocusedWindow()?.webContents.send('menu:openProject');
+          }
+        },
+        {
+          label: 'New Project...',
+          accelerator: 'CmdOrCtrl+Shift+N',
+          click: () => {
+            BrowserWindow.getFocusedWindow()?.webContents.send('menu:newProject');
+          }
+        },
+        {
+          label: 'Recent Projects',
+          submenu: [],
+          id: 'recentProjects'
+        },
+        { type: 'separator' },
         {
           label: 'New Note',
           accelerator: 'CmdOrCtrl+N',
@@ -54,10 +74,24 @@ export function createMenu() {
         },
         { type: 'separator' },
         {
-          label: 'Workspace Rules...',
+          label: 'KnowledgeOS Rules...',
           accelerator: 'CmdOrCtrl+,',
           click: () => {
             BrowserWindow.getFocusedWindow()?.webContents.send('menu:workspaceRules');
+          }
+        },
+        {
+          label: 'API Keys...',
+          accelerator: 'CmdOrCtrl+Shift+K',
+          click: () => {
+            BrowserWindow.getFocusedWindow()?.webContents.send('menu:apiKeys');
+          }
+        },
+        {
+          label: 'MCP Servers...',
+          accelerator: 'CmdOrCtrl+Shift+M',
+          click: () => {
+            BrowserWindow.getFocusedWindow()?.webContents.send('menu:mcpServers');
           }
         },
         { type: 'separator' },

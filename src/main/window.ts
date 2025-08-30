@@ -5,12 +5,17 @@ export function createWindow(): BrowserWindow {
   // Get primary display dimensions
   const { width, height } = screen.getPrimaryDisplay().workAreaSize;
 
+  // Use PNG for all platforms as it's most compatible
+  const iconPath = path.resolve(process.cwd(), 'assets/icons/icon.png');
+
   // Create the browser window
   const mainWindow = new BrowserWindow({
     width: Math.min(1400, width * 0.9),
     height: Math.min(900, height * 0.9),
     minWidth: 800,
     minHeight: 600,
+    title: 'KnowledgeOS',
+    icon: iconPath, // Set the app icon
     titleBarStyle: 'hiddenInset',
     trafficLightPosition: { x: 20, y: 20 },
     backgroundColor: '#000000',

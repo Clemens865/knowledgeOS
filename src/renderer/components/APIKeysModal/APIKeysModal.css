@@ -1,0 +1,74 @@
+.api-keys-modal {
+  max-width: 600px;
+  width: 90%;
+}
+
+.api-keys-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.api-key-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.api-key-group label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.api-key-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.api-key-input {
+  flex: 1;
+  padding: 10px 40px 10px 12px;
+  background: var(--glass-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-family: 'SF Mono', Monaco, monospace;
+  transition: all 0.2s ease;
+}
+
+.api-key-input:focus {
+  outline: none;
+  border-color: var(--purple-500);
+  background: var(--glass-frost);
+  box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.1);
+}
+
+.api-key-input::placeholder {
+  color: var(--text-tertiary);
+  font-family: 'SF Mono', Monaco, monospace;
+}
+
+.toggle-visibility {
+  position: absolute;
+  right: 8px;
+  background: transparent;
+  border: none;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 18px;
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+}
+
+.toggle-visibility:hover {
+  opacity: 1;
+}
+
+.api-key-hint {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}

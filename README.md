@@ -1,15 +1,32 @@
 # KnowledgeOS
 
-A revolutionary knowledge management platform combining the power of VS Code, AI intelligence, and beautiful glass morphism design.
+A revolutionary AI-powered knowledge management system that combines intelligent conversation, document analysis, and beautiful glass morphism design to organize your digital mind.
+
+![Version](https://img.shields.io/badge/version-2.0.0-blue)
+![Platform](https://img.shields.io/badge/platform-macOS%20|%20Windows%20|%20Linux-green)
+![License](https://img.shields.io/badge/license-MIT-purple)
+
+## 🌟 What's New in v2.0
+
+- **🎨 Vision AI Support**: Upload and analyze images with GPT-4o, GPT-4 Vision
+- **📊 Analytics Dashboard**: Obsidian-inspired knowledge insights
+- **🔌 MCP Integration**: Extend with external tools and services
+- **📝 Split Editor**: Side-by-side editing with resizable panes
+- **🧠 Multi-Provider AI**: Support for Claude, OpenAI, and Gemini
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 - Node.js 18+ 
 - npm or yarn
+- API keys for AI providers (OpenAI, Claude, or Gemini)
 
 ### Installation
 ```bash
+# Clone the repository
+git clone https://github.com/yourusername/knowledge-os.git
+cd knowledge-os
+
 # Install dependencies
 npm install
 
@@ -17,7 +34,117 @@ npm install
 npm start
 ```
 
-### Development
+### First Run Setup
+1. Launch the app
+2. Click the gear icon to open Settings
+3. Configure your API keys (Cmd+Shift+K)
+4. Select or create a workspace
+5. Start chatting with your AI assistant!
+
+## ✨ Key Features
+
+### 🤖 AI-Powered Knowledge Management
+- **Intelligent Conversations**: Chat with Claude, GPT-4, or Gemini
+- **Vision Analysis**: Upload images for AI analysis (GPT-4o, GPT-4 Vision)
+- **Document Processing**: Extract knowledge from PDFs and documents
+- **Auto-Organization**: AI automatically organizes your notes
+
+### 📊 Analytics Dashboard
+- **Knowledge Metrics**: Track notes, words, and connections
+- **Activity Visualization**: See your knowledge growth over time
+- **Connection Mapping**: Discover relationships between notes
+- **Orphaned Notes Detection**: Find disconnected information
+
+### 🔌 Model Context Protocol (MCP)
+- **Tool Integration**: Connect external services and tools
+- **Extensible Architecture**: Add custom capabilities
+- **Server Management**: Configure and manage MCP servers
+
+### 📝 Advanced Editor
+- **Split-Pane Editing**: Work on multiple files simultaneously
+- **Markdown Support**: Full markdown editing with preview
+- **Syntax Highlighting**: Beautiful code highlighting
+- **File Operations**: Create, edit, and organize notes
+
+### 🎨 Beautiful Interface
+- **Glass Morphism Design**: Modern, translucent UI
+- **Dark/Light Themes**: Comfortable viewing in any environment
+- **Smooth Animations**: Delightful user experience
+- **Responsive Layout**: Adapts to your workflow
+
+## 📁 Project Structure
+
+```
+KnowledgeOS/
+├── src/
+│   ├── main/              # Electron main process
+│   │   ├── index.ts       # Application entry point
+│   │   ├── llmHandlers.ts # LLM communication
+│   │   ├── mcpManager.ts  # MCP integration
+│   │   └── analyticsHandlers.ts # Analytics engine
+│   ├── renderer/          # React frontend
+│   │   ├── ChatApp.tsx    # Main application
+│   │   └── components/    # UI components
+│   ├── features/          # Feature modules
+│   │   └── analytics/     # Analytics dashboard
+│   └── core/              # Core services
+│       └── LLMService.ts  # AI provider abstraction
+├── assets/                # Icons and images
+└── docs/                  # Documentation
+```
+
+## 🛠️ Configuration
+
+### API Keys
+Configure your AI provider API keys through:
+- Menu: `File → API Keys`
+- Shortcut: `Cmd+Shift+K` (Mac) / `Ctrl+Shift+K` (Windows/Linux)
+
+### Supported AI Models
+
+#### OpenAI
+- GPT-4o (Vision)
+- GPT-4o Mini (Vision)
+- GPT-4 Vision
+- GPT-4 Turbo
+- GPT-3.5 Turbo
+
+#### Claude
+- Claude 3 Opus
+- Claude 3 Sonnet
+- Claude 3 Haiku
+
+#### Gemini
+- Gemini Pro
+- Gemini Pro Vision
+
+### Workspace Rules
+Customize system prompts per workspace:
+- Menu: `File → Workspace Rules`
+- Define custom behaviors and knowledge extraction rules
+
+## ⌨️ Keyboard Shortcuts
+
+| Action | Mac | Windows/Linux |
+|--------|-----|---------------|
+| New Note | `Cmd+N` | `Ctrl+N` |
+| Open File | `Cmd+O` | `Ctrl+O` |
+| Save | `Cmd+S` | `Ctrl+S` |
+| API Keys | `Cmd+Shift+K` | `Ctrl+Shift+K` |
+| Toggle Sidebar | `Cmd+B` | `Ctrl+B` |
+| Command Palette | `Cmd+K` | `Ctrl+K` |
+| Toggle Editor | `Cmd+E` | `Ctrl+E` |
+
+## 🔧 Development
+
+### Tech Stack
+- **Electron**: Desktop application framework
+- **React**: UI framework
+- **TypeScript**: Type-safe development
+- **Webpack**: Module bundling
+- **IPC**: Inter-process communication
+
+### Development Commands
 ```bash
 # Run in development mode
 npm run dev
@@ -25,89 +152,97 @@ npm run dev
 # Build the application
 npm run build
 
+# Run tests
+npm test
+
+# Type checking
+npm run typecheck
+
+# Linting
+npm run lint
+
 # Package for distribution
 npm run package
 ```
 
-## 🏗️ Architecture
+### Building from Source
+```bash
+# macOS
+npm run build:mac
 
-- **Electron** - Desktop application framework
-- **Monaco Editor** - VS Code's powerful editor at the core
-- **React** - UI framework with glass morphism design
-- **TypeScript** - Type-safe development
-- **Markdown** - Knowledge stored as markdown files
+# Windows
+npm run build:win
 
-## ✨ Features
-
-### Phase 1 (Current)
-- ✅ Electron application with Monaco Editor
-- ✅ Glass morphism UI design
-- ✅ File tree navigation
-- ✅ Markdown editing with syntax highlighting
-- ✅ Command palette (Cmd/Ctrl + K)
-- ✅ AI chat panel interface
-- ✅ Sidebar with files/search/graph tabs
-
-### Upcoming
-- 🔄 Wiki-links and backlinking
-- 🔄 AI integration (OpenAI, Anthropic, local LLMs)
-- 🔄 Knowledge graph visualization
-- 📋 Semantic search
-- 📋 Plugin system
-- 📋 Real-time collaboration
-
-## 🎨 UI Features
-
-- Glass morphism effects with backdrop blur
-- Light/dark theme support (coming soon)
-- Gradient accents and prism effects
-- Smooth animations and transitions
-- Command palette for quick actions
-- Collapsible sidebar and chat panel
-
-## 📁 Project Structure
-
-```
-src/
-├── main/              # Electron main process
-│   ├── index.ts      # Entry point
-│   ├── window.ts     # Window management
-│   ├── ipc.ts        # IPC handlers
-│   └── menu.ts       # Application menu
-├── renderer/          # React application
-│   ├── App.tsx       # Main component
-│   ├── components/   # UI components
-│   └── styles/       # CSS styles
-└── shared/           # Shared types/utils
+# Linux
+npm run build:linux
 ```
 
-## 🛠️ Available Commands
+## 📊 Analytics Features
 
-### Application Menu
-- **File**: New Note, Open, Save, Save As
-- **Edit**: Standard editing operations
-- **View**: Toggle sidebar, AI chat, command palette
-- **Window**: Window management
-- **Help**: Documentation and support
+The built-in analytics dashboard provides insights into your knowledge base:
 
-### Keyboard Shortcuts
-- `Cmd/Ctrl + N` - New note
-- `Cmd/Ctrl + O` - Open file
-- `Cmd/Ctrl + S` - Save file
-- `Cmd/Ctrl + K` - Command palette
-- `Cmd/Ctrl + B` - Toggle sidebar
-- `Cmd/Ctrl + Shift + C` - Toggle AI chat
+- **Overview**: Total notes, words, links, and tag statistics
+- **Activity**: Daily activity charts and recent modifications
+- **Connections**: Most linked notes and orphaned content
+- **Growth**: Knowledge base growth over time
 
-## 🔗 Links
+Access analytics through the Tools sidebar.
 
-- [GitHub Repository](https://github.com/Clemens865/knowledgeOS)
-- [Documentation](./Documents/PRD-Knowledge-OS.md)
-- [Development Plan](./DEVELOPMENT_PLAN.md)
+## 🔌 MCP Integration
+
+Extend KnowledgeOS with Model Context Protocol servers:
+
+1. Open MCP Configuration (`File → MCP Servers`)
+2. Add server configuration
+3. Test connection
+4. Use integrated tools in conversations
+
+## 🤝 Contributing
+
+We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+### Areas for Contribution
+- New AI provider integrations
+- Additional analytics visualizations
+- MCP server implementations
+- UI/UX improvements
+- Documentation
+- Bug fixes
 
 ## 📝 License
 
-MIT
+MIT License - see [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- Built with [Electron](https://www.electronjs.org/)
+- UI inspired by [Obsidian](https://obsidian.md/)
+- AI powered by [OpenAI](https://openai.com/), [Anthropic](https://anthropic.com/), and [Google](https://ai.google/)
+
+## 🐛 Known Issues
+
+- Analytics may take time with large workspaces (1000+ notes)
+- Some vision models require specific API access
+- MCP servers require manual configuration
+
+## 📮 Support
+
+- Report issues on [GitHub Issues](https://github.com/yourusername/knowledge-os/issues)
+- Join our [Discord community](https://discord.gg/knowledgeos)
+- Check the [Wiki](https://github.com/yourusername/knowledge-os/wiki) for detailed guides
+
+## 🗺️ Roadmap
+
+### Coming Soon
+- [ ] Knowledge Graph visualization
+- [ ] Smart Search with semantic understanding
+- [ ] Link Explorer for connection discovery
+- [ ] Template system for structured notes
+- [ ] Plugin marketplace
+- [ ] Collaboration features
+- [ ] Mobile companion app
+- [ ] Optional cloud sync
 
 ---
 
-**KnowledgeOS** - Where knowledge meets intelligence
+**Built with ❤️ for knowledge workers, researchers, and digital thinkers**

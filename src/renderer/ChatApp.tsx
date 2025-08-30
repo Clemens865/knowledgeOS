@@ -2,6 +2,10 @@
 import React, { useState, useEffect } from 'react';
 import WorkspaceModal from './components/WorkspaceModal/WorkspaceModal';
 import WorkspaceRulesModal from './components/WorkspaceRulesModal/WorkspaceRulesModal';
+import APIKeysModal from './components/APIKeysModal/APIKeysModal';
+import { MCPServersModal } from './components/MCPServersModal/MCPServersModal';
+import { AnalyticsView } from '../features/analytics/AnalyticsView';
+import { ConversationMode, DEFAULT_MODES } from '../core/ConversationModes';
 import FileTree from './components/FileTree/FileTree';
 import Conversation from './components/Conversation/Conversation';
 import FileEditor from './components/FileEditor/FileEditor';
@@ -40,6 +44,10 @@ function ChatApp() {
   const [showStatus, setShowStatus] = useState(false);
   const [showWorkspaceModal, setShowWorkspaceModal] = useState(false);
   const [showWorkspaceRules, setShowWorkspaceRules] = useState(false);
+  const [showAPIKeysModal, setShowAPIKeysModal] = useState(false);
+  const [showMCPModal, setShowMCPModal] = useState(false);
+  const [modes, setModes] = useState<ConversationMode[]>(DEFAULT_MODES);
+  const [currentMode, setCurrentMode] = useState<ConversationMode>(DEFAULT_MODES[0]);
   const [showEditor, setShowEditor] = useState(false);
   const [splitLayout, setSplitLayout] = useState<'vertical' | 'horizontal'>('vertical');
   const [splitSize, setSplitSize] = useState('50%');
@@ -48,12 +56,14 @@ function ChatApp() {
   const [selectedProvider, setSelectedProvider] = useState<string>('Claude');
   const [selectedModel, setSelectedModel] = useState<string>('claude-3-sonnet-20240229');
   const [apiKeys, setApiKeys] = useState<Record<string, string>>({});
+  const [activeTool, setActiveTool] = useState<string | null>(null);
 
   // Load settings and workspace on mount
   useEffect(() => {
     loadSettings();
     checkWorkspace();
     loadApiKeys();
+    loadConversationModes();
   }, []);
 
   // Apply theme
@@ -66,6 +76,12 @@ function ChatApp() {
     const handleMenuAction = (action: string) => {
       if (action === 'workspaceRules') {
         setShowWorkspaceRules(true);
+      } else if (action === 'apiKeys') {
+        setShowAPIKeysModal(true);
+      } else if (action === 'mcpServers') {
+        setShowMCPModal(true);
+      } else if (action === 'openProject' || action === 'newProject') {
+        setShowWorkspaceModal(true);
       }
     };
 
@@ -94,7 +110,19 @@ function ChatApp() {
       if (window.electronAPI?.getSetting) {
         const savedSettings = await window.electronAPI.getSetting('appSettings');
         if (savedSettings) {
-          setSettings(savedSettings);
+          // Merge with default values to ensure all properties exist
+          setSettings({
+            theme: savedSettings.theme || 'light',
+            backgroundImage: savedSettings.backgroundImage,
+            backgroundOpacity: savedSettings.backgroundOpacity ?? 30,
+            backgroundBlur: savedSettings.backgroundBlur ?? 0,
+            overlayOpacity: savedSettings.overlayOpacity ?? 70,
+            voiceInput: savedSettings.voiceInput ?? false,
+            hapticFeedback: savedSettings.hapticFeedback ?? false,
+            soundEffects: savedSettings.soundEffects ?? false,
+            animationQuality: savedSettings.animationQuality || 'High',
+            reduceMotion: savedSettings.reduceMotion ?? false
+          });
         }
       }
     } catch (error) {
@@ -107,7 +135,7 @@ function ChatApp() {
       if (window.electronAPI?.getCurrentWorkspace) {
         const workspace = await window.electronAPI.getCurrentWorkspace();
         if (workspace) {
-          const name = workspace.split('/').pop() || 'Workspace';
+          const name = workspace.split('/').pop() || 'Project';
           setCurrentWorkspace({ path: workspace, name });
         } else {
           // No workspace, show modal
@@ -116,6 +144,20 @@ function ChatApp() {
       }
     } catch (error) {
       console.error('Error checking workspace:', error);
+    }
+  };
+
+  const loadConversationModes = async () => {
+    try {
+      if (window.electronAPI?.getSetting) {
+        const savedModes = await window.electronAPI.getSetting('conversationModes');
+        if (savedModes) {
+          setModes(savedModes);
+          setCurrentMode(savedModes[0]);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading conversation modes:', error);
     }
   };
 
@@ -150,11 +192,18 @@ function ChatApp() {
   const handleSelectWorkspace = async (path: string, name: string) => {
     setCurrentWorkspace({ path, name });
     setShowWorkspaceModal(false);
-    showDynamicStatus(`Workspace opened: ${name}`);
+    showDynamicStatus(`Project opened: ${name}`);
     
-    // Save to settings
+    // Save to settings for persistence
     if (window.electronAPI?.setSetting) {
       await window.electronAPI.setSetting('currentWorkspace', path);
+      console.log('Workspace saved to settings:', path);
+    }
+    
+    // Open the workspace through the backend
+    if (window.electronAPI?.openWorkspace) {
+      await window.electronAPI.openWorkspace(path);
+      console.log('Workspace opened in backend:', path);
     }
   };
 
@@ -224,13 +273,13 @@ function ChatApp() {
             alt="Background" 
             className="background-image"
             style={{
-              opacity: settings.backgroundOpacity / 100,
+              opacity: isNaN(settings.backgroundOpacity) ? 0.3 : settings.backgroundOpacity / 100,
               filter: settings.backgroundBlur > 0 ? `blur(${settings.backgroundBlur}px)` : 'none'
             }}
           />
           <div 
             className="background-overlay"
-            style={{ opacity: settings.overlayOpacity / 100 }}
+            style={{ opacity: isNaN(settings.overlayOpacity) ? 0.7 : settings.overlayOpacity / 100 }}
           />
         </div>
       )}
@@ -269,11 +318,21 @@ function ChatApp() {
       <div className={`sidebar ${isSidebarOpen ? 'expanded' : ''}`}>
         <div className="sidebar-header">
           <div className="logo">KnowledgeOS</div>
-          {currentWorkspace && (
+          {currentWorkspace ? (
             <div className="workspace-indicator">
               <span className="workspace-icon">📁</span>
-              <span className="workspace-name">{currentWorkspace.name}</span>
+              <div className="workspace-info">
+                <span className="workspace-label">Current Project</span>
+                <span className="workspace-name">{currentWorkspace.name}</span>
+              </div>
             </div>
+          ) : (
+            <button 
+              className="open-project-btn"
+              onClick={() => setShowWorkspaceModal(true)}
+            >
+              Open Project
+            </button>
           )}
         </div>
 
@@ -321,6 +380,37 @@ function ChatApp() {
           <div className="settings-section">
             <h3 className="settings-title">AI Configuration</h3>
             
+            {/* Conversation Mode Selector */}
+            <div className="setting-item">
+              <div className="setting-label">
+                <span className="setting-name">Conversation Mode</span>
+              </div>
+              <select 
+                className="provider-select"
+                value={currentMode.id}
+                onChange={(e) => {
+                  const mode = modes.find(m => m.id === e.target.value);
+                  if (mode) setCurrentMode(mode);
+                }}
+              >
+                {modes.map(mode => (
+                  <option key={mode.id} value={mode.id}>
+                    {mode.icon} {mode.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            <div className="setting-item">
+              <button 
+                className="configure-key-btn"
+                onClick={() => setShowWorkspaceRules(true)}
+                style={{ width: '100%' }}
+              >
+                📝 Edit Mode Rules
+              </button>
+            </div>
+            
             <div className="setting-item">
               <div className="setting-label">
                 <span className="setting-name">AI Provider</span>
@@ -334,7 +424,7 @@ function ChatApp() {
                   if (e.target.value === 'Claude') {
                     setSelectedModel('claude-3-sonnet-20240229');
                   } else if (e.target.value === 'OpenAI') {
-                    setSelectedModel('gpt-4-turbo-preview');
+                    setSelectedModel('gpt-4o');  // Default to vision-capable model
                   } else if (e.target.value === 'Gemini') {
                     setSelectedModel('gemini-pro');
                   }
@@ -364,7 +454,11 @@ function ChatApp() {
                 )}
                 {selectedProvider === 'OpenAI' && (
                   <>
-                    <option value="gpt-4-turbo-preview">GPT-4 Turbo</option>
+                    <option value="gpt-4o">GPT-4o (Vision)</option>
+                    <option value="gpt-4o-mini">GPT-4o Mini (Vision)</option>
+                    <option value="gpt-4-vision-preview">GPT-4 Vision</option>
+                    <option value="gpt-4-turbo">GPT-4 Turbo (Vision)</option>
+                    <option value="gpt-4-turbo-preview">GPT-4 Turbo Preview</option>
                     <option value="gpt-4">GPT-4</option>
                     <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
                   </>
@@ -380,45 +474,29 @@ function ChatApp() {
 
             <div className="setting-item">
               <div className="setting-label">
-                <span className="setting-name">API Key</span>
+                <span className="setting-name">API Key Status</span>
               </div>
-              <div className="api-key-input">
-                <input 
-                  type="password"
-                  className="api-key-field"
-                  placeholder={`Enter ${selectedProvider} API Key`}
-                  value={apiKeys[selectedProvider] || ''}
-                  onChange={(e) => {
-                    const newKeys = { ...apiKeys, [selectedProvider]: e.target.value };
-                    setApiKeys(newKeys);
-                  }}
-                />
+              <div className="api-key-status">
+                {apiKeys[selectedProvider] ? (
+                  <div className="status-configured">
+                    <span className="status-icon">✅</span>
+                    <span className="status-text">Configured</span>
+                  </div>
+                ) : (
+                  <div className="status-missing">
+                    <span className="status-icon">⚠️</span>
+                    <span className="status-text">Not configured</span>
+                  </div>
+                )}
                 <button 
-                  className="save-key-btn"
-                  onClick={async () => {
-                    try {
-                      if (!window.electronAPI || !window.electronAPI.saveApiKey) {
-                        console.error('Electron API not available for saveApiKey');
-                        showDynamicStatus('Error: API not available');
-                        return;
-                      }
-                      
-                      if (apiKeys[selectedProvider]) {
-                        const result = await window.electronAPI.saveApiKey(selectedProvider, apiKeys[selectedProvider]);
-                        if (result && result.success) {
-                          showDynamicStatus('API Key saved successfully');
-                        } else {
-                          showDynamicStatus(`Error: ${result?.error || 'Failed to save key'}`);
-                        }
-                      }
-                    } catch (error) {
-                      console.error('Error saving API key:', error);
-                      showDynamicStatus('Error saving API key');
-                    }
-                  }}
+                  className="configure-key-btn"
+                  onClick={() => setShowAPIKeysModal(true)}
                 >
-                  Save
+                  {apiKeys[selectedProvider] ? 'Update Keys' : 'Add Keys'}
                 </button>
+              </div>
+              <div className="api-key-hint">
+                Use Cmd+Shift+K or File → API Keys to manage all keys
               </div>
             </div>
           </div>
@@ -591,31 +669,59 @@ function ChatApp() {
           {/* Tools Tab */}
           {sidebarTab === 'tools' && (
             <div className="tools-tab">
-              <div className="tools-section">
-                <h3 className="settings-title">AI Tools</h3>
-                <div className="tools-list">
-                  <div className="tool-item">
-                    <span className="tool-icon">🧠</span>
-                    <span className="tool-name">Knowledge Graph</span>
-                    <span className="future-badge">Coming Soon</span>
-                  </div>
-                  <div className="tool-item">
-                    <span className="tool-icon">🔍</span>
-                    <span className="tool-name">Smart Search</span>
-                    <span className="future-badge">Coming Soon</span>
-                  </div>
-                  <div className="tool-item">
-                    <span className="tool-icon">📊</span>
-                    <span className="tool-name">Analytics</span>
-                    <span className="future-badge">Coming Soon</span>
-                  </div>
-                  <div className="tool-item">
-                    <span className="tool-icon">🔗</span>
-                    <span className="tool-name">Link Explorer</span>
-                    <span className="future-badge">Coming Soon</span>
+              {!activeTool ? (
+                <div className="tools-section">
+                  <h3 className="settings-title">AI Tools</h3>
+                  <div className="tools-list">
+                    <div className="tool-item">
+                      <span className="tool-icon">🧠</span>
+                      <span className="tool-name">Knowledge Graph</span>
+                      <span className="future-badge">Coming Soon</span>
+                    </div>
+                    <div className="tool-item">
+                      <span className="tool-icon">🔍</span>
+                      <span className="tool-name">Smart Search</span>
+                      <span className="future-badge">Coming Soon</span>
+                    </div>
+                    <div 
+                      className="tool-item clickable" 
+                      onClick={() => setActiveTool('analytics')}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <span className="tool-icon">📊</span>
+                      <span className="tool-name">Analytics</span>
+                      <span className="active-badge">Available</span>
+                    </div>
+                    <div className="tool-item">
+                      <span className="tool-icon">🔗</span>
+                      <span className="tool-name">Link Explorer</span>
+                      <span className="future-badge">Coming Soon</span>
+                    </div>
                   </div>
                 </div>
-              </div>
+              ) : (
+                <div className="tool-view">
+                  <button 
+                    className="back-button" 
+                    onClick={() => setActiveTool(null)}
+                    style={{
+                      padding: '8px 12px',
+                      marginBottom: '12px',
+                      background: 'rgba(255, 255, 255, 0.1)',
+                      border: '1px solid var(--glass-border)',
+                      borderRadius: '8px',
+                      color: 'var(--text-primary)',
+                      cursor: 'pointer',
+                      fontSize: '13px'
+                    }}
+                  >
+                    ← Back to Tools
+                  </button>
+                  {activeTool === 'analytics' && currentWorkspace && (
+                    <AnalyticsView workspacePath={currentWorkspace.path} />
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -645,6 +751,7 @@ function ChatApp() {
                     }
                   : null
               }
+              currentMode={currentMode}
             />
           </SplitPane>
         ) : (
@@ -659,6 +766,7 @@ function ChatApp() {
                   }
                 : null
             }
+            currentMode={currentMode}
           />
         )}
         
@@ -693,6 +801,31 @@ function ChatApp() {
       <WorkspaceRulesModal
         isOpen={showWorkspaceRules}
         onClose={() => setShowWorkspaceRules(false)}
+        currentMode={currentMode}
+        modes={modes}
+        onModeUpdate={async (updatedMode) => {
+          // Update the mode in our list
+          const updatedModes = modes.map(m => 
+            m.id === updatedMode.id ? updatedMode : m
+          );
+          setModes(updatedModes);
+          setCurrentMode(updatedMode);
+          
+          // Save to settings
+          if (window.electronAPI?.setSetting) {
+            await window.electronAPI.setSetting('conversationModes', updatedModes);
+          }
+        }}
+      />
+      
+      <APIKeysModal
+        isOpen={showAPIKeysModal}
+        onClose={() => setShowAPIKeysModal(false)}
+      />
+      
+      <MCPServersModal
+        isOpen={showMCPModal}
+        onClose={() => setShowMCPModal(false)}
       />
     </div>
   );
