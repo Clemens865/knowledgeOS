@@ -6,6 +6,7 @@ import APIKeysModal from './components/APIKeysModal/APIKeysModal';
 import { MCPServersModal } from './components/MCPServersModal/MCPServersModal';
 import ConversationModesModal from './components/ConversationModesModal/ConversationModesModal';
 import { AnalyticsView } from '../features/analytics/AnalyticsView';
+import KnowledgeGraphView from '../features/knowledgeGraph/KnowledgeGraphView';
 import { ConversationMode, DEFAULT_MODES } from '../core/ConversationModes';
 import FileTree from './components/FileTree/FileTree';
 import Conversation from './components/Conversation/Conversation';
@@ -717,10 +718,14 @@ function ChatApp() {
                 <div className="tools-section">
                   <h3 className="settings-title">AI Tools</h3>
                   <div className="tools-list">
-                    <div className="tool-item">
+                    <div 
+                      className="tool-item clickable" 
+                      onClick={() => setActiveTool('knowledgeGraph')}
+                      style={{ cursor: 'pointer' }}
+                    >
                       <span className="tool-icon">🧠</span>
                       <span className="tool-name">Knowledge Graph</span>
-                      <span className="future-badge">Coming Soon</span>
+                      <span className="active-badge">New!</span>
                     </div>
                     <div className="tool-item">
                       <span className="tool-icon">🔍</span>
@@ -763,6 +768,18 @@ function ChatApp() {
                   </button>
                   {activeTool === 'analytics' && currentWorkspace && (
                     <AnalyticsView workspacePath={currentWorkspace.path} />
+                  )}
+                  {activeTool === 'knowledgeGraph' && currentWorkspace && (
+                    <KnowledgeGraphView 
+                      workspacePath={currentWorkspace.path}
+                      onNodeClick={(node) => {
+                        // Open the file when a note node is clicked
+                        if (node.type === 'note' && node.path) {
+                          handleFileSelect(node.path);
+                          setActiveTool(null); // Go back to tools list
+                        }
+                      }}
+                    />
                   )}
                 </div>
               )}

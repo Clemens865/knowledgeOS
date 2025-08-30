@@ -46,6 +46,8 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.17.4",
     "@monaco-editor/react": "^4.7.0",
+    "@types/d3": "^7.4.3",
+    "d3": "^7.9.0",
     "electron-store": "^10.1.0",
     "js-yaml": "^4.1.0",
     "monaco-editor": "^0.52.2",

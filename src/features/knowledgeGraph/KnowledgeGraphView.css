@@ -1,0 +1,251 @@
+.knowledge-graph-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.graph-controls {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--glass-border);
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.control-group {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.search-input {
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--glass-border);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 13px;
+  width: 200px;
+  transition: all 0.2s;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--accent-color);
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.filter-select {
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--glass-border);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filter-select:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.control-btn {
+  padding: 8px 16px;
+  background: rgba(142, 124, 195, 0.2);
+  border: 1px solid var(--accent-color);
+  border-radius: 6px;
+  color: var(--accent-color);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.control-btn:hover {
+  background: rgba(142, 124, 195, 0.3);
+  transform: translateY(-1px);
+}
+
+.graph-main {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+.knowledge-graph-svg {
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at center, rgba(142, 124, 195, 0.02) 0%, transparent 70%);
+}
+
+/* Graph Elements */
+.links line {
+  stroke: rgba(142, 124, 195, 0.3);
+  stroke-opacity: 0.6;
+  transition: all 0.2s;
+}
+
+.link-link {
+  stroke: rgba(142, 124, 195, 0.5);
+  stroke-width: 2;
+}
+
+.link-tag {
+  stroke: rgba(124, 195, 142, 0.4);
+  stroke-width: 1.5;
+  stroke-dasharray: 3, 3;
+}
+
+.link-folder {
+  stroke: rgba(195, 168, 124, 0.4);
+  stroke-width: 1.5;
+}
+
+.node {
+  cursor: pointer;
+}
+
+.node circle {
+  stroke: #fff;
+  stroke-width: 2px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+  transition: all 0.2s;
+}
+
+.node:hover circle {
+  filter: drop-shadow(0 4px 8px rgba(142, 124, 195, 0.4));
+}
+
+.node-label {
+  fill: var(--text-primary);
+  font-size: 12px;
+  font-weight: 500;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3),
+               0 0 8px rgba(0, 0, 0, 0.5);
+  user-select: none;
+}
+
+.node-icon {
+  fill: white;
+  font-size: 16px;
+  user-select: none;
+}
+
+/* Node type specific styles */
+.node-note circle {
+  fill: #8e7cc3;
+}
+
+.node-tag circle {
+  fill: #7cc38e;
+}
+
+.node-folder circle {
+  fill: #c3a87c;
+}
+
+/* Tooltip */
+.node-tooltip {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.8);
+  border: 1px solid var(--glass-border);
+  border-radius: 6px;
+  color: white;
+  font-size: 12px;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 1000;
+}
+
+/* Stats Panel */
+.graph-stats {
+  display: flex;
+  gap: 20px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-top: 1px solid var(--glass-border);
+  font-size: 12px;
+}
+
+.stat-item {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.stat-label {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.stat-value {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* Loading State */
+.knowledge-graph-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 16px;
+}
+
+.loading-spinner {
+  font-size: 32px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .graph-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .control-group {
+    width: 100%;
+  }
+  
+  .search-input,
+  .filter-select {
+    width: 100%;
+  }
+  
+  .graph-stats {
+    flex-wrap: wrap;
+  }
+}
+
+/* Dark mode adjustments */
+[data-theme="dark"] {
+  .knowledge-graph-svg {
+    background: radial-gradient(circle at center, rgba(142, 124, 195, 0.05) 0%, transparent 70%);
+  }
+  
+  .node-label {
+    fill: rgba(255, 255, 255, 0.9);
+  }
+  
+  .links line {
+    stroke: rgba(142, 124, 195, 0.4);
+  }
+}
