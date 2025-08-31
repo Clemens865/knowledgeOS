@@ -105,6 +105,12 @@ interface ElectronAPI {
     import: (modes: ConversationMode[]) => Promise<{ success: boolean; importedCount?: number; error?: string }>;
     getDefaultRules: () => Promise<{ success: boolean; rules?: string; error?: string }>;
   };
+  
+  // Knowledge Graph API
+  knowledgeGraph?: {
+    buildGraph: (workspacePath: string) => Promise<{ success: boolean; graph?: any; error?: string }>;
+    getNodeDetails: (workspacePath: string, nodeId: string) => Promise<{ success: boolean; node?: any; error?: string }>;
+  };
 }
 
 interface ConversationMode {

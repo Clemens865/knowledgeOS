@@ -6,12 +6,14 @@ import APIKeysModal from './components/APIKeysModal/APIKeysModal';
 import { MCPServersModal } from './components/MCPServersModal/MCPServersModal';
 import ConversationModesModal from './components/ConversationModesModal/ConversationModesModal';
 import { AnalyticsView } from '../features/analytics/AnalyticsView';
+import KnowledgeGraphView from '../features/knowledgeGraph/KnowledgeGraphView';
 import { ConversationMode, DEFAULT_MODES } from '../core/ConversationModes';
 import FileTree from './components/FileTree/FileTree';
 import Conversation from './components/Conversation/Conversation';
 import FileEditor from './components/FileEditor/FileEditor';
 import SplitPane from './components/SplitPane/SplitPane';
 import './styles/chat-app.css';
+import './styles/split-view.css';
 
 interface AppSettings {
   theme: 'light' | 'dark';
@@ -50,9 +52,9 @@ function ChatApp() {
   const [showModesModal, setShowModesModal] = useState(false);
   const [modes, setModes] = useState<ConversationMode[]>(DEFAULT_MODES);
   const [currentMode, setCurrentMode] = useState<ConversationMode>(DEFAULT_MODES[0]);
-  const [showEditor, setShowEditor] = useState(false);
   const [splitLayout, setSplitLayout] = useState<'vertical' | 'horizontal'>('vertical');
   const [splitSize, setSplitSize] = useState('50%');
+  const [splitViewMode, setSplitViewMode] = useState<'none' | 'editor' | 'graph' | 'analytics'>('none');
   const [currentWorkspace, setCurrentWorkspace] = useState<{ path: string; name: string } | null>(null);
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [selectedProvider, setSelectedProvider] = useState<string>('Claude');
@@ -109,7 +111,7 @@ function ChatApp() {
   // Handle file open events
   useEffect(() => {
     const handleFileOpen = () => {
-      setShowEditor(true);
+      setSplitViewMode('editor');
     };
 
     window.addEventListener('open-file', handleFileOpen);
@@ -269,7 +271,9 @@ function ChatApp() {
   const handleFileSelect = async (filePath: string) => {
     setSelectedFile(filePath);
     showDynamicStatus(`Opened: ${filePath.split('/').pop()}`);
-    // TODO: Load file content and display in editor/viewer
+    setSplitViewMode('editor');
+    // Dispatch event for FileEditor to handle
+    window.dispatchEvent(new CustomEvent('open-file', { detail: filePath }));
   };
 
   const toggleSwitch = (setting: keyof AppSettings) => {
@@ -717,10 +721,17 @@ function ChatApp() {
                 <div className="tools-section">
                   <h3 className="settings-title">AI Tools</h3>
                   <div className="tools-list">
-                    <div className="tool-item">
+                    <div 
+                      className="tool-item clickable" 
+                      onClick={() => {
+                        setSplitViewMode('graph');
+                        setActiveTool(null);
+                      }}
+                      style={{ cursor: 'pointer' }}
+                    >
                       <span className="tool-icon">🧠</span>
                       <span className="tool-name">Knowledge Graph</span>
-                      <span className="future-badge">Coming Soon</span>
+                      <span className="active-badge">New!</span>
                     </div>
                     <div className="tool-item">
                       <span className="tool-icon">🔍</span>
@@ -729,7 +740,10 @@ function ChatApp() {
                     </div>
                     <div 
                       className="tool-item clickable" 
-                      onClick={() => setActiveTool('analytics')}
+                      onClick={() => {
+                        setSplitViewMode('analytics');
+                        setActiveTool(null);
+                      }}
                       style={{ cursor: 'pointer' }}
                     >
                       <span className="tool-icon">📊</span>
@@ -764,6 +778,18 @@ function ChatApp() {
                   {activeTool === 'analytics' && currentWorkspace && (
                     <AnalyticsView workspacePath={currentWorkspace.path} />
                   )}
+                  {activeTool === 'knowledgeGraph' && currentWorkspace && (
+                    <KnowledgeGraphView 
+                      workspacePath={currentWorkspace.path}
+                      onNodeClick={(node) => {
+                        // Open the file when a note node is clicked
+                        if (node.type === 'note' && node.path) {
+                          handleFileSelect(node.path);
+                          setActiveTool(null); // Go back to tools list
+                        }
+                      }}
+                    />
+                  )}
                 </div>
               )}
             </div>
@@ -773,17 +799,13 @@ function ChatApp() {
 
       {/* Main Content */}
       <div className="main-content">
-        {showEditor ? (
+        {splitViewMode !== 'none' ? (
           <SplitPane
             split={splitLayout}
             defaultSize={splitSize}
             minSize={300}
             onSplitChange={(size) => setSplitSize(`${size}%`)}
           >
-            <FileEditor 
-              isOpen={true}
-              onClose={() => setShowEditor(false)}
-            />
             <Conversation 
               currentWorkspace={currentWorkspace}
               provider={
@@ -797,6 +819,28 @@ function ChatApp() {
               }
               currentMode={currentMode}
             />
+            <div className="split-view-panel">
+              {splitViewMode === 'editor' && (
+                <FileEditor 
+                  isOpen={true}
+                  onClose={() => setSplitViewMode('none')}
+                />
+              )}
+              {splitViewMode === 'graph' && currentWorkspace && (
+                <KnowledgeGraphView
+                  workspacePath={currentWorkspace.path}
+                  onNodeClick={(node) => {
+                    if (node.type === 'note' && node.path) {
+                      handleFileSelect(node.path);
+                      setSplitViewMode('editor');
+                    }
+                  }}
+                />
+              )}
+              {splitViewMode === 'analytics' && currentWorkspace && (
+                <AnalyticsView workspacePath={currentWorkspace.path} />
+              )}
+            </div>
           </SplitPane>
         ) : (
           <Conversation 
@@ -814,25 +858,44 @@ function ChatApp() {
           />
         )}
         
-        {/* Editor Toggle Button */}
-        <button
-          className="editor-toggle"
-          onClick={() => setShowEditor(!showEditor)}
-          title={showEditor ? 'Hide Editor' : 'Show Editor'}
-        >
-          {showEditor ? '✕' : '📝'}
-        </button>
-        
-        {/* Layout Toggle Button */}
-        {showEditor && (
+        {/* Split View Toggle Buttons */}
+        <div className="split-view-toggles">
           <button
-            className="layout-toggle"
-            onClick={() => setSplitLayout(splitLayout === 'vertical' ? 'horizontal' : 'vertical')}
-            title={`Switch to ${splitLayout === 'vertical' ? 'Horizontal' : 'Vertical'} Layout`}
+            className={`split-toggle ${splitViewMode === 'editor' ? 'active' : ''}`}
+            onClick={() => {
+              setSplitViewMode(splitViewMode === 'editor' ? 'none' : 'editor');
+              if (splitViewMode !== 'editor' && selectedFile) {
+                handleFileSelect(selectedFile);
+              }
+            }}
+            title="Toggle Editor"
           >
-            {splitLayout === 'vertical' ? '⬌' : '⬍'}
+            📝
           </button>
-        )}
+          <button
+            className={`split-toggle ${splitViewMode === 'graph' ? 'active' : ''}`}
+            onClick={() => setSplitViewMode(splitViewMode === 'graph' ? 'none' : 'graph')}
+            title="Toggle Knowledge Graph"
+          >
+            🧠
+          </button>
+          <button
+            className={`split-toggle ${splitViewMode === 'analytics' ? 'active' : ''}`}
+            onClick={() => setSplitViewMode(splitViewMode === 'analytics' ? 'none' : 'analytics')}
+            title="Toggle Analytics"
+          >
+            📊
+          </button>
+          {splitViewMode !== 'none' && (
+            <button
+              className="layout-toggle"
+              onClick={() => setSplitLayout(splitLayout === 'vertical' ? 'horizontal' : 'vertical')}
+              title={`Switch to ${splitLayout === 'vertical' ? 'Horizontal' : 'Vertical'} Layout`}
+            >
+              {splitLayout === 'vertical' ? '⬌' : '⬍'}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Workspace Modal */}

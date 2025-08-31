@@ -103,5 +103,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     export: () => ipcRenderer.invoke('modes:export'),
     import: (modes: any[]) => ipcRenderer.invoke('modes:import', modes),
     getDefaultRules: () => ipcRenderer.invoke('modes:getDefaultRules')
+  },
+  
+  // Knowledge Graph API
+  knowledgeGraph: {
+    buildGraph: (workspacePath: string) => ipcRenderer.invoke('knowledgeGraph:build', workspacePath),
+    getNodeDetails: (workspacePath: string, nodeId: string) => ipcRenderer.invoke('knowledgeGraph:getNodeDetails', workspacePath, nodeId)
   }
 });
