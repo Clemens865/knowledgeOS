@@ -7,6 +7,8 @@ import { MCPServersModal } from './components/MCPServersModal/MCPServersModal';
 import ConversationModesModal from './components/ConversationModesModal/ConversationModesModal';
 import { AnalyticsView } from '../features/analytics/AnalyticsView';
 import KnowledgeGraphView from '../features/knowledgeGraph/KnowledgeGraphView';
+import WebImportModal from '../features/webImport/WebImportModal';
+import SemanticSearchModal from '../features/semanticSearch/SemanticSearchModal';
 import { ConversationMode, DEFAULT_MODES } from '../core/ConversationModes';
 import FileTree from './components/FileTree/FileTree';
 import Conversation from './components/Conversation/Conversation';
@@ -50,6 +52,8 @@ function ChatApp() {
   const [showAPIKeysModal, setShowAPIKeysModal] = useState(false);
   const [showMCPModal, setShowMCPModal] = useState(false);
   const [showModesModal, setShowModesModal] = useState(false);
+  const [showWebImportModal, setShowWebImportModal] = useState(false);
+  const [showSemanticSearchModal, setShowSemanticSearchModal] = useState(false);
   const [modes, setModes] = useState<ConversationMode[]>(DEFAULT_MODES);
   const [currentMode, setCurrentMode] = useState<ConversationMode>(DEFAULT_MODES[0]);
   const [splitLayout, setSplitLayout] = useState<'vertical' | 'horizontal'>('vertical');
@@ -733,10 +737,14 @@ function ChatApp() {
                       <span className="tool-name">Knowledge Graph</span>
                       <span className="active-badge">New!</span>
                     </div>
-                    <div className="tool-item">
+                    <div 
+                      className="tool-item clickable"
+                      onClick={() => setShowSemanticSearchModal(true)}
+                      style={{ cursor: 'pointer' }}
+                    >
                       <span className="tool-icon">🔍</span>
                       <span className="tool-name">Smart Search</span>
-                      <span className="future-badge">Coming Soon</span>
+                      <span className="active-badge">New!</span>
                     </div>
                     <div 
                       className="tool-item clickable" 
@@ -749,6 +757,15 @@ function ChatApp() {
                       <span className="tool-icon">📊</span>
                       <span className="tool-name">Analytics</span>
                       <span className="active-badge">Available</span>
+                    </div>
+                    <div 
+                      className="tool-item clickable" 
+                      onClick={() => setShowWebImportModal(true)}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <span className="tool-icon">🌐</span>
+                      <span className="tool-name">Import from Web</span>
+                      <span className="active-badge">New!</span>
                     </div>
                     <div className="tool-item">
                       <span className="tool-icon">🔗</span>
@@ -948,6 +965,31 @@ function ChatApp() {
           setShowStatus(true);
           setDynamicStatus(`Switched to ${mode.name} mode`);
           setTimeout(() => setShowStatus(false), 3000);
+        }}
+      />
+      
+      <WebImportModal
+        isOpen={showWebImportModal}
+        onClose={() => setShowWebImportModal(false)}
+        workspacePath={currentWorkspace?.path || null}
+        onImportComplete={(filePath) => {
+          showDynamicStatus('Web content imported successfully!');
+          // Optionally refresh file tree or open the imported file
+          if (filePath) {
+            handleFileSelect(filePath);
+          }
+        }}
+      />
+      
+      <SemanticSearchModal
+        isOpen={showSemanticSearchModal}
+        onClose={() => setShowSemanticSearchModal(false)}
+        workspacePath={currentWorkspace?.path || null}
+        openAIApiKey={apiKeys['OpenAI'] || ''}
+        onSelectResult={(content) => {
+          // Optionally handle selected search result
+          console.log('Selected search result:', content);
+          setShowSemanticSearchModal(false);
         }}
       />
     </div>

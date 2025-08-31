@@ -8,6 +8,8 @@ import { setupLLMHandlers } from './llmHandlers';
 import { setupAnalyticsHandlers } from './analyticsHandlers';
 import { setupConversationModesHandlers } from './conversationModesHandlers';
 import { setupKnowledgeGraphHandlers } from './knowledgeGraphHandlers';
+import { setupFirecrawlHandlers } from './firecrawlHandlers';
+import { setupSemanticSearchHandlers } from './semanticSearchHandlers';
 import Store from 'electron-store';
 import { initMCPManager, getMCPManager } from './mcpManager';
 
@@ -113,6 +115,8 @@ app.whenReady().then(() => {
   setupAnalyticsHandlers();
   setupConversationModesHandlers();
   setupKnowledgeGraphHandlers();
+  setupFirecrawlHandlers();
+  setupSemanticSearchHandlers();
   
   // Initialize MCP Manager
   initMCPManager();

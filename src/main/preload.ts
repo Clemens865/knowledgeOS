@@ -109,5 +109,31 @@ contextBridge.exposeInMainWorld('electronAPI', {
   knowledgeGraph: {
     buildGraph: (workspacePath: string) => ipcRenderer.invoke('knowledgeGraph:build', workspacePath),
     getNodeDetails: (workspacePath: string, nodeId: string) => ipcRenderer.invoke('knowledgeGraph:getNodeDetails', workspacePath, nodeId)
-  }
+  },
+  
+  // Firecrawl API
+  firecrawl: {
+    setApiKey: (apiKey: string) => ipcRenderer.invoke('firecrawl:setApiKey', apiKey),
+    hasApiKey: () => ipcRenderer.invoke('firecrawl:hasApiKey'),
+    scrapePage: (url: string) => ipcRenderer.invoke('firecrawl:scrapePage', url),
+    crawlWebsite: (options: any) => ipcRenderer.invoke('firecrawl:crawlWebsite', options),
+    saveAsNote: (content: any, workspacePath: string) => ipcRenderer.invoke('firecrawl:saveAsNote', content, workspacePath)
+  },
+  
+  // Semantic Search API
+  semanticSearch: {
+    setProvider: (type: 'local' | 'openai' | 'mock', apiKey?: string) => 
+      ipcRenderer.invoke('semanticSearch:setProvider', type, apiKey),
+    indexWorkspace: (workspacePath: string) => 
+      ipcRenderer.invoke('semanticSearch:indexWorkspace', workspacePath),
+    search: (query: string, limit?: number) => 
+      ipcRenderer.invoke('semanticSearch:search', query, limit),
+    hybridSearch: (query: string, limit?: number) => 
+      ipcRenderer.invoke('semanticSearch:hybridSearch', query, limit),
+    getStats: () => ipcRenderer.invoke('semanticSearch:getStats'),
+    clearDocuments: () => ipcRenderer.invoke('semanticSearch:clearDocuments')
+  },
+  
+  // Generic invoke for backwards compatibility
+  invoke: (channel: string, ...args: any[]) => ipcRenderer.invoke(channel, ...args)
 });

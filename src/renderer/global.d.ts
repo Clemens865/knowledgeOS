@@ -111,6 +111,28 @@ interface ElectronAPI {
     buildGraph: (workspacePath: string) => Promise<{ success: boolean; graph?: any; error?: string }>;
     getNodeDetails: (workspacePath: string, nodeId: string) => Promise<{ success: boolean; node?: any; error?: string }>;
   };
+  
+  // Firecrawl API
+  firecrawl?: {
+    setApiKey: (apiKey: string) => Promise<{ success: boolean; error?: string }>;
+    hasApiKey: () => Promise<boolean>;
+    scrapePage: (url: string) => Promise<{ success: boolean; data?: any; error?: string }>;
+    crawlWebsite: (options: any) => Promise<{ success: boolean; data?: any[]; error?: string }>;
+    saveAsNote: (content: any, workspacePath: string) => Promise<{ success: boolean; filePath?: string; error?: string }>;
+  };
+  
+  // Semantic Search API
+  semanticSearch?: {
+    setProvider: (type: 'local' | 'openai' | 'mock', apiKey?: string) => Promise<{ success: boolean; error?: string }>;
+    indexWorkspace: (workspacePath: string) => Promise<{ success: boolean; count?: number; error?: string }>;
+    search: (query: string, limit?: number) => Promise<{ success: boolean; results?: any[]; error?: string }>;
+    hybridSearch: (query: string, limit?: number) => Promise<{ success: boolean; results?: any[]; error?: string }>;
+    getStats: () => Promise<{ documentCount: number; provider: string; dimension: number }>;
+    clearDocuments: () => Promise<{ success: boolean }>;
+  };
+  
+  // Generic invoke for dynamic IPC calls
+  invoke?: (channel: string, ...args: any[]) => Promise<any>;
 }
 
 interface ConversationMode {
