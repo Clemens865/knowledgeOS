@@ -2,6 +2,7 @@ import { ipcMain } from 'electron';
 import { promises as fs } from 'fs';
 import * as path from 'path';
 import { LocalEmbeddingProvider, OpenAIEmbeddingProvider, MockEmbeddingProvider, EmbeddingProvider } from './services/EmbeddingProvider';
+import { VectorDatabase } from './services/VectorDatabase';
 
 interface VectorDocument {
   id: string;
@@ -13,6 +14,8 @@ interface VectorDocument {
     tags?: string[];
     createdAt?: string;
     modifiedAt?: string;
+    fileType?: string;
+    checksum?: string;
   };
 }
 
@@ -24,16 +27,18 @@ interface SearchResult {
 }
 
 class SemanticSearchService {
-  private vectorStore: Map<string, VectorDocument> = new Map();
-  private embeddings: Map<string, number[]> = new Map();
+  private db: VectorDatabase;
   private provider: EmbeddingProvider;
   private currentProviderType: 'local' | 'openai' | 'mock' = 'mock';
+  private currentWorkspace: string | null = null;
   
   constructor() {
     this.provider = new MockEmbeddingProvider();
+    this.db = new VectorDatabase();
   }
   
   async setProvider(type: 'local' | 'openai' | 'mock', apiKey?: string) {
+    const previousType = this.currentProviderType;
     this.currentProviderType = type;
     
     switch (type) {
@@ -53,19 +58,38 @@ class SemanticSearchService {
     }
     
     // Re-index if we have documents and changed provider
-    if (this.vectorStore.size > 0 && type !== this.currentProviderType) {
-      await this.reindexDocuments();
+    if (this.currentWorkspace && type !== previousType) {
+      const stats = await this.db.getStats();
+      if (stats.documentCount > 0) {
+        await this.reindexDocuments();
+      }
     }
   }
   
   async indexWorkspace(workspacePath: string): Promise<number> {
-    const documents = await this.scanWorkspaceForDocuments(workspacePath);
-    
-    for (const doc of documents) {
-      await this.addDocument(doc);
+    // Initialize database for this workspace if not already done
+    if (this.currentWorkspace !== workspacePath) {
+      await this.db.initialize(workspacePath);
+      this.currentWorkspace = workspacePath;
     }
     
-    return documents.length;
+    const documents = await this.scanWorkspaceForDocuments(workspacePath);
+    
+    // Check which documents need indexing
+    const paths = documents.map(d => d.metadata?.path || d.id);
+    const indexingStatus = await this.db.getDocumentsToIndex(paths);
+    
+    let indexedCount = 0;
+    for (const doc of documents) {
+      const status = indexingStatus.find(s => s.path === doc.metadata?.path);
+      if (status?.needsIndexing !== false) {
+        await this.addDocument(doc);
+        indexedCount++;
+      }
+    }
+    
+    console.log(`Indexed ${indexedCount} new/modified documents out of ${documents.length} total`);
+    return indexedCount;
   }
   
   private async scanWorkspaceForDocuments(workspacePath: string): Promise<VectorDocument[]> {
@@ -125,79 +149,49 @@ class SemanticSearchService {
   }
   
   async addDocument(doc: VectorDocument): Promise<void> {
+    if (!this.currentWorkspace) {
+      throw new Error('No workspace initialized');
+    }
+    
     const embedding = await this.provider.generateEmbedding(doc.content);
-    doc.embedding = embedding;
-    this.vectorStore.set(doc.id, doc);
-    this.embeddings.set(doc.id, embedding);
+    await this.db.upsertDocument(doc, embedding, this.provider.getName());
   }
   
   async search(query: string, limit: number = 5): Promise<SearchResult[]> {
-    if (this.vectorStore.size === 0) {
+    if (!this.currentWorkspace) {
       return [];
     }
     
     const queryEmbedding = await this.provider.generateEmbedding(query);
-    const results: SearchResult[] = [];
-    
-    for (const [id, doc] of this.vectorStore) {
-      const docEmbedding = this.embeddings.get(id);
-      if (!docEmbedding) continue;
-      
-      const score = this.cosineSimilarity(queryEmbedding, docEmbedding);
-      results.push({
-        id,
-        content: doc.content.substring(0, 500), // Truncate for display
-        score,
-        metadata: doc.metadata
-      });
-    }
-    
-    results.sort((a, b) => b.score - a.score);
-    return results.slice(0, limit);
+    return await this.db.search(queryEmbedding, limit);
   }
   
   async hybridSearch(query: string, limit: number = 5): Promise<SearchResult[]> {
+    if (!this.currentWorkspace) {
+      return [];
+    }
+    
     // Get semantic results
     const semanticResults = await this.search(query, limit * 2);
     
     // Keyword search
     const keywords = query.toLowerCase().split(' ').filter(k => k.length > 2);
-    const keywordResults: SearchResult[] = [];
+    const keywordResults = await this.db.keywordSearch(keywords, limit * 2);
     
-    for (const [id, doc] of this.vectorStore) {
-      const content = doc.content.toLowerCase();
-      let keywordScore = 0;
-      
-      for (const keyword of keywords) {
-        if (content.includes(keyword)) {
-          keywordScore += (content.match(new RegExp(keyword, 'g')) || []).length;
-        }
-      }
-      
-      if (keywordScore > 0) {
-        keywordResults.push({
-          id,
-          content: doc.content.substring(0, 500),
-          score: keywordScore / (keywords.length * 10), // Normalize
-          metadata: doc.metadata
-        });
-      }
-    }
-    
-    // Combine results
+    // Combine results with weighted scores
     const combinedMap = new Map<string, SearchResult>();
     
     for (const result of semanticResults) {
       combinedMap.set(result.id, {
         ...result,
-        score: result.score * 0.7
+        score: result.score * 0.7  // 70% weight for semantic
       });
     }
     
     for (const result of keywordResults) {
       const existing = combinedMap.get(result.id);
       if (existing) {
-        existing.score += result.score * 0.3;
+        existing.score += result.score * 0.3;  // 30% weight for keywords
       } else {
         combinedMap.set(result.id, {
           ...result,
@@ -211,48 +205,71 @@ class SemanticSearchService {
     return finalResults.slice(0, limit);
   }
   
-  private cosineSimilarity(a: number[], b: number[]): number {
-    if (a.length !== b.length) return 0;
-    
-    let dotProduct = 0;
-    let normA = 0;
-    let normB = 0;
-    
-    for (let i = 0; i < a.length; i++) {
-      dotProduct += a[i] * b[i];
-      normA += a[i] * a[i];
-      normB += b[i] * b[i];
-    }
-    
-    normA = Math.sqrt(normA);
-    normB = Math.sqrt(normB);
-    
-    if (normA === 0 || normB === 0) return 0;
-    return dotProduct / (normA * normB);
-  }
-  
   private async reindexDocuments(): Promise<void> {
-    const docs = Array.from(this.vectorStore.values());
-    this.embeddings.clear();
+    if (!this.currentWorkspace) {
+      throw new Error('No workspace initialized');
+    }
     
-    for (const doc of docs) {
-      const embedding = await this.provider.generateEmbedding(doc.content);
-      doc.embedding = embedding;
-      this.embeddings.set(doc.id, embedding);
+    // Get all indexed paths from database
+    const indexedPaths = await this.db.getIndexedPaths();
+    
+    console.log(`Re-indexing ${indexedPaths.length} documents with new provider...`);
+    
+    for (const filePath of indexedPaths) {
+      try {
+        const content = await fs.readFile(filePath, 'utf-8');
+        const stats = await fs.stat(filePath);
+        
+        // Extract metadata
+        const titleMatch = content.match(/^#\s+(.+)$/m);
+        const title = titleMatch ? titleMatch[1] : path.basename(filePath).replace('.md', '');
+        
+        const doc: VectorDocument = {
+          id: filePath,
+          content,
+          metadata: {
+            title,
+            path: filePath,
+            fileType: path.extname(filePath).slice(1) || 'md',
+            modifiedAt: stats.mtime.toISOString()
+          }
+        };
+        
+        // Generate new embedding with current provider
+        const embedding = await this.provider.generateEmbedding(content);
+        await this.db.upsertDocument(doc, embedding, this.provider.getName());
+      } catch (error) {
+        console.error(`Error re-indexing ${filePath}:`, error);
+      }
     }
   }
   
-  getStats() {
+  async getStats() {
+    if (!this.currentWorkspace) {
+      return {
+        documentCount: 0,
+        provider: this.provider.getName(),
+        dimension: this.provider.getDimension(),
+      };
+    }
+    
+    const dbStats = await this.db.getStats();
     return {
-      documentCount: this.vectorStore.size,
+      documentCount: dbStats.documentCount,
       provider: this.provider.getName(),
       dimension: this.provider.getDimension(),
+      databasePath: dbStats.databasePath,
+      databaseSize: dbStats.databaseSize,
+      lastIndexed: dbStats.lastIndexed,
+      embeddingCount: dbStats.embeddingCount,
+      uniqueTags: dbStats.uniqueTags
     };
   }
   
-  clearDocuments() {
-    this.vectorStore.clear();
-    this.embeddings.clear();
+  async clearIndex(): Promise<void> {
+    if (this.currentWorkspace) {
+      await this.db.clear();
+    }
   }
 }
 
@@ -305,9 +322,13 @@ export function setupSemanticSearchHandlers() {
     return semanticSearchService.getStats();
   });
   
-  // Clear documents
-  ipcMain.handle('semanticSearch:clearDocuments', async (_event) => {
-    semanticSearchService.clearDocuments();
-    return { success: true };
+  // Clear index
+  ipcMain.handle('semanticSearch:clearIndex', async (_event) => {
+    try {
+      await semanticSearchService.clearIndex();
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
   });
 }

@@ -38,7 +38,20 @@ const SemanticSearchModal: React.FC<SemanticSearchModalProps> = ({
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isIndexing, setIsIndexing] = useState(false);
-  const [stats, setStats] = useState({ documentCount: 0, provider: 'Mock', dimension: 384 });
+  const [stats, setStats] = useState<{
+    documentCount: number;
+    provider: string;
+    dimension: number;
+    databasePath?: string;
+    databaseSize?: string;
+    lastIndexed?: string;
+    embeddingCount?: number;
+    uniqueTags?: number;
+  }>({ 
+    documentCount: 0, 
+    provider: 'Mock', 
+    dimension: 384
+  });
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
 
@@ -151,7 +164,7 @@ const SemanticSearchModal: React.FC<SemanticSearchModalProps> = ({
       const result = await window.electronAPI.semanticSearch.indexWorkspace(workspacePath);
       
       if (result.success) {
-        setMessage(`Successfully indexed ${result.count} documents`);
+        setMessage(`Successfully indexed ${result.count} new/modified documents`);
         loadStats();
       } else {
         setError(result.error || 'Indexing failed');
@@ -160,6 +173,32 @@ const SemanticSearchModal: React.FC<SemanticSearchModalProps> = ({
       setError(err.message || 'Indexing failed');
     } finally {
       setIsIndexing(false);
+    }
+  };
+
+  const handleClearIndex = async () => {
+    if (!window.electronAPI?.semanticSearch) {
+      setError('Semantic search not available');
+      return;
+    }
+
+    if (confirm('Are you sure you want to clear the entire search index? This cannot be undone.')) {
+      setError('');
+      setMessage('Clearing index...');
+
+      try {
+        const result = await window.electronAPI.semanticSearch.clearIndex();
+        
+        if (result.success) {
+          setMessage('Index cleared successfully');
+          setResults([]);
+          loadStats();
+        } else {
+          setError(result.error || 'Failed to clear index');
+        }
+      } catch (err: any) {
+        setError(err.message || 'Failed to clear index');
+      }
     }
   };
 
@@ -201,9 +240,19 @@ const SemanticSearchModal: React.FC<SemanticSearchModalProps> = ({
               <span className="stat-value">{stats.documentCount}</span>
             </div>
             <div className="stat-item">
+              <span className="stat-label">DB Size:</span>
+              <span className="stat-value">{stats.databaseSize}</span>
+            </div>
+            <div className="stat-item">
               <span className="stat-label">Provider:</span>
               <span className="stat-value">{stats.provider}</span>
             </div>
+            {stats.lastIndexed && (
+              <div className="stat-item">
+                <span className="stat-label">Last Indexed:</span>
+                <span className="stat-value">{new Date(stats.lastIndexed).toLocaleDateString()}</span>
+              </div>
+            )}
             <div className="stat-item">
               <button 
                 className="index-btn"
@@ -213,6 +262,18 @@ const SemanticSearchModal: React.FC<SemanticSearchModalProps> = ({
                 {isIndexing ? '⏳ Indexing...' : '📚 Index Workspace'}
               </button>
             </div>
+            {stats.documentCount > 0 && (
+              <div className="stat-item">
+                <button 
+                  className="index-btn clear-btn"
+                  onClick={handleClearIndex}
+                  disabled={isIndexing}
+                  style={{ backgroundColor: '#ff4444' }}
+                >
+                  🗑️ Clear Index
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="provider-selector">

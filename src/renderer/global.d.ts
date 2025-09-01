@@ -127,8 +127,17 @@ interface ElectronAPI {
     indexWorkspace: (workspacePath: string) => Promise<{ success: boolean; count?: number; error?: string }>;
     search: (query: string, limit?: number) => Promise<{ success: boolean; results?: any[]; error?: string }>;
     hybridSearch: (query: string, limit?: number) => Promise<{ success: boolean; results?: any[]; error?: string }>;
-    getStats: () => Promise<{ documentCount: number; provider: string; dimension: number }>;
-    clearDocuments: () => Promise<{ success: boolean }>;
+    getStats: () => Promise<{ 
+      documentCount: number; 
+      provider: string; 
+      dimension: number;
+      databasePath?: string;
+      databaseSize?: string;
+      lastIndexed?: string;
+      embeddingCount?: number;
+      uniqueTags?: number;
+    }>;
+    clearIndex: () => Promise<{ success: boolean; error?: string }>;
   };
   
   // Generic invoke for dynamic IPC calls

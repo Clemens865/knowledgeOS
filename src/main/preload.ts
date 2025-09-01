@@ -131,7 +131,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     hybridSearch: (query: string, limit?: number) => 
       ipcRenderer.invoke('semanticSearch:hybridSearch', query, limit),
     getStats: () => ipcRenderer.invoke('semanticSearch:getStats'),
-    clearDocuments: () => ipcRenderer.invoke('semanticSearch:clearDocuments')
+    clearIndex: () => ipcRenderer.invoke('semanticSearch:clearIndex')
   },
   
   // Generic invoke for backwards compatibility
