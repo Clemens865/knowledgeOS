@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import FileSelector from './FileSelector';
 import './semanticSearch.css';
 
 interface SemanticSearchModalProps {
@@ -54,6 +55,8 @@ const SemanticSearchModal: React.FC<SemanticSearchModalProps> = ({
   });
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const [activeTab, setActiveTab] = useState<'search' | 'index'>('search');
+  const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
 
   useEffect(() => {
     if (isOpen) {
@@ -176,6 +179,41 @@ const SemanticSearchModal: React.FC<SemanticSearchModalProps> = ({
     }
   };
 
+  const handleIndexSelectedFiles = async () => {
+    if (selectedFiles.length === 0) {
+      setError('No files selected for indexing');
+      return;
+    }
+
+    if (!window.electronAPI?.semanticSearch) {
+      setError('Semantic search not available');
+      return;
+    }
+
+    setIsIndexing(true);
+    setError('');
+    setMessage(`Indexing ${selectedFiles.length} selected files...`);
+
+    try {
+      // For now, we'll index selected files through the workspace indexer
+      // In the future, we'll add a specific endpoint for selective indexing
+      const result = await window.electronAPI.semanticSearch.indexWorkspace(workspacePath || '');
+      
+      if (result.success) {
+        setMessage(`Successfully indexed ${selectedFiles.length} files`);
+        loadStats();
+        setSelectedFiles([]);
+        setActiveTab('search');
+      } else {
+        setError(result.error || 'Indexing failed');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Indexing failed');
+    } finally {
+      setIsIndexing(false);
+    }
+  };
+
   const handleClearIndex = async () => {
     if (!window.electronAPI?.semanticSearch) {
       setError('Semantic search not available');
@@ -234,6 +272,23 @@ const SemanticSearchModal: React.FC<SemanticSearchModalProps> = ({
         </div>
 
         <div className="modal-content">
+          <div className="tab-buttons">
+            <button 
+              className={`tab-btn ${activeTab === 'search' ? 'active' : ''}`}
+              onClick={() => setActiveTab('search')}
+            >
+              🔍 Search
+            </button>
+            <button 
+              className={`tab-btn ${activeTab === 'index' ? 'active' : ''}`}
+              onClick={() => setActiveTab('index')}
+            >
+              📚 Index Files
+            </button>
+          </div>
+
+          {activeTab === 'search' ? (
+            <>
           <div className="search-stats">
             <div className="stat-item">
               <span className="stat-label">Documents:</span>
@@ -401,6 +456,45 @@ const SemanticSearchModal: React.FC<SemanticSearchModalProps> = ({
               </ul>
             </div>
           </div>
+            </>
+          ) : (
+            <div className="file-selector-container">
+              <FileSelector 
+                workspacePath={workspacePath || ''}
+                onSelectionChange={setSelectedFiles}
+                supportedExtensions={[
+                  '.md', '.txt', '.pdf', '.docx', '.doc',
+                  '.js', '.ts', '.jsx', '.tsx', '.py', '.java', 
+                  '.cpp', '.c', '.h', '.cs', '.rb', '.go', '.rs',
+                  '.html', '.css', '.json', '.xml', '.yaml', '.yml'
+                ]}
+              />
+              
+              <div className="index-actions">
+                <button 
+                  className="index-selected-btn"
+                  onClick={handleIndexSelectedFiles}
+                  disabled={isIndexing || selectedFiles.length === 0}
+                >
+                  {isIndexing ? '⏳ Indexing...' : `📚 Index ${selectedFiles.length} Selected Files`}
+                </button>
+              </div>
+
+              {message && (
+                <div className="search-message success">
+                  <span className="message-icon">ℹ️</span>
+                  <p>{message}</p>
+                </div>
+              )}
+
+              {error && (
+                <div className="search-message error">
+                  <span className="message-icon">⚠️</span>
+                  <p>{error}</p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
