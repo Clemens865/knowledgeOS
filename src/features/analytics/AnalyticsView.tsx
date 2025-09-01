@@ -33,12 +33,14 @@ interface AnalyticsViewProps {
 
 export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ workspacePath }) => {
   const [stats, setStats] = useState<KnowledgeStats | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false); // Start with false to avoid persistent loading
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'activity' | 'connections' | 'growth'>('overview');
 
   useEffect(() => {
-    loadAnalytics();
+    if (workspacePath) {
+      loadAnalytics();
+    }
   }, [workspacePath]);
 
   const loadAnalytics = async () => {

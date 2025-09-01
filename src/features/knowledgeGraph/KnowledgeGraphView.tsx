@@ -28,7 +28,7 @@ const KnowledgeGraphView: React.FC<KnowledgeGraphViewProps> = ({
 }) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const [graphData, setGraphData] = useState<KnowledgeGraph | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // Start with false to avoid persistent loading
   const [, setSelectedNode] = useState<string | null>(null); // For future use
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'notes' | 'tags' | 'folders'>('all');
@@ -37,7 +37,9 @@ const KnowledgeGraphView: React.FC<KnowledgeGraphViewProps> = ({
 
   // Load graph data
   useEffect(() => {
-    loadGraphData();
+    if (workspacePath) {
+      loadGraphData();
+    }
   }, [workspacePath]);
 
   const loadGraphData = async () => {

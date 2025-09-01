@@ -17,10 +17,12 @@ interface FileTreeProps {
 const FileTree: React.FC<FileTreeProps> = ({ rootPath, onFileSelect, activeFile }) => {
   const [files, setFiles] = useState<FileNode[]>([]);
   const [expandedDirs, setExpandedDirs] = useState<Set<string>>(new Set());
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // Start with false to avoid persistent loading
 
   useEffect(() => {
-    loadFiles(rootPath);
+    if (rootPath) {
+      loadFiles(rootPath);
+    }
   }, [rootPath]);
 
   // Listen for file tree refresh events
