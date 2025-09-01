@@ -31,37 +31,46 @@ const FileSelector: React.FC<FileSelectorProps> = ({
   supportedExtensions = DEFAULT_EXTENSIONS
 }) => {
   const [fileTree, setFileTree] = useState<FileNode[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false);  // Start with false
   const [expandedPaths, setExpandedPaths] = useState<Set<string>>(new Set());
   const [selectedPaths, setSelectedPaths] = useState<Set<string>>(new Set());
   const [filter, setFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
-    loadFileTree();
+    if (workspacePath) {
+      loadFileTree();
+    } else {
+      // Clear the loading state if no workspace
+      setLoading(false);
+      setFileTree([]);
+    }
   }, [workspacePath]);
 
   const loadFileTree = async () => {
-    if (!window.electronAPI?.listFiles) return;
+    if (!window.electronAPI?.listFiles || !workspacePath) {
+      setLoading(false);
+      return;
+    }
     
     setLoading(true);
     try {
-      const tree = await buildFileTree(workspacePath);
+      const tree = await buildFileTree(workspacePath, 0);
       setFileTree(tree);
-      // Auto-expand first level
-      tree.forEach(node => {
-        if (node.isDirectory) {
-          setExpandedPaths(prev => new Set(prev).add(node.path));
-        }
-      });
+      // Don't auto-expand to prevent loading too much
+      setExpandedPaths(new Set());
     } catch (error) {
       console.error('Failed to load file tree:', error);
+      setFileTree([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const buildFileTree = async (dirPath: string): Promise<FileNode[]> => {
+  const buildFileTree = async (dirPath: string, depth: number = 0): Promise<FileNode[]> => {
+    // Limit depth to prevent infinite recursion
+    if (depth > 10) return [];
+    
     const result = await window.electronAPI!.listFiles(dirPath);
     if (!result.success || !result.files) return [];
 
@@ -83,7 +92,8 @@ const FileSelector: React.FC<FileSelectorProps> = ({
       }
 
       if (file.isDirectory) {
-        node.children = await buildFileTree(file.path);
+        // Don't expand directories by default to prevent loading too much
+        node.children = [];
       } else {
         // Only include supported file types
         if (!node.extension || !supportedExtensions.includes(node.extension)) {
@@ -102,16 +112,34 @@ const FileSelector: React.FC<FileSelectorProps> = ({
     });
   };
 
-  const toggleExpanded = (path: string) => {
+  const toggleExpanded = async (node: FileNode) => {
+    const path = node.path;
     setExpandedPaths(prev => {
       const newSet = new Set(prev);
       if (newSet.has(path)) {
         newSet.delete(path);
       } else {
         newSet.add(path);
+        // Lazy load children when expanding for the first time
+        if (node.isDirectory && (!node.children || node.children.length === 0)) {
+          loadDirectoryChildren(node);
+        }
       }
       return newSet;
     });
+  };
+
+  const loadDirectoryChildren = async (node: FileNode) => {
+    if (!window.electronAPI?.listFiles) return;
+    
+    try {
+      const children = await buildFileTree(node.path, 1);
+      node.children = children;
+      // Force re-render
+      setFileTree([...fileTree]);
+    } catch (error) {
+      console.error('Failed to load directory children:', error);
+    }
   };
 
   const toggleSelected = (node: FileNode, checked: boolean) => {
@@ -206,9 +234,9 @@ const FileSelector: React.FC<FileSelectorProps> = ({
           {node.isDirectory && (
             <button
               className="expand-btn"
-              onClick={() => toggleExpanded(node.path)}
+              onClick={() => toggleExpanded(node)}
             >
-              {hasChildren ? (isExpanded ? '▼' : '▶') : '•'}
+              {hasChildren || node.isDirectory ? (isExpanded ? '▼' : '▶') : '•'}
             </button>
           )}
           
@@ -359,6 +387,8 @@ const FileSelector: React.FC<FileSelectorProps> = ({
       <div className="file-tree">
         {loading ? (
           <div className="loading">Loading files...</div>
+        ) : fileTree.length === 0 ? (
+          <div className="loading">No files found in workspace</div>
         ) : (
           filterNodes(fileTree).map(node => renderFileNode(node))
         )}

@@ -69,8 +69,13 @@ class SemanticSearchService {
   async indexWorkspace(workspacePath: string): Promise<number> {
     // Initialize database for this workspace if not already done
     if (this.currentWorkspace !== workspacePath) {
-      await this.db.initialize(workspacePath);
-      this.currentWorkspace = workspacePath;
+      try {
+        await this.db.initialize(workspacePath);
+        this.currentWorkspace = workspacePath;
+      } catch (error) {
+        console.error('Failed to initialize database:', error);
+        throw error;
+      }
     }
     
     const documents = await this.scanWorkspaceForDocuments(workspacePath);
