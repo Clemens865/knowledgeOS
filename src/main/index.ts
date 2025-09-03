@@ -8,8 +8,10 @@ import { setupLLMHandlers } from './llmHandlers';
 import { setupAnalyticsHandlers } from './analyticsHandlers';
 import { setupConversationModesHandlers } from './conversationModesHandlers';
 import { setupKnowledgeGraphHandlers } from './knowledgeGraphHandlers';
+import { setupKnowledgeAgentHandlers } from './knowledgeAgentHandlers';
 import Store from 'electron-store';
 import { initMCPManager, getMCPManager } from './mcpManager';
+import { PythonServiceManager } from './services/PythonServiceManager';
 
 // Set the app name before anything else - MUST be done early!
 app.setName('KnowledgeOS');
@@ -24,6 +26,7 @@ interface StoreSchema {
 }
 
 let mainWindow: BrowserWindow | null = null;
+let pythonService: PythonServiceManager | null = null;
 
 // Initialize electron-store for settings with proper typing
 const store = new Store<StoreSchema>({
@@ -118,6 +121,18 @@ app.whenReady().then(() => {
   initMCPManager();
   console.log('🔌 MCP Manager initialized');
   
+  // Initialize Python Knowledge Service
+  pythonService = new PythonServiceManager();
+  console.log('🐍 Starting Python Knowledge Service...');
+  pythonService.start().then((success) => {
+    if (success) {
+      console.log('✅ Python Knowledge Service started successfully');
+      setupKnowledgeAgentHandlers(pythonService);
+    } else {
+      console.error('❌ Failed to start Python Knowledge Service');
+    }
+  });
+  
   createMenu();
 
   app.on('activate', () => {
@@ -136,12 +151,17 @@ app.on('window-all-closed', () => {
   }
 });
 
-// Clean up MCP connections on app quit
+// Clean up MCP connections and Python service on app quit
 app.on('before-quit', async () => {
   const mcpManager = getMCPManager();
   if (mcpManager) {
     await mcpManager.cleanup();
     console.log('🔌 MCP Manager cleaned up');
+  }
+  
+  if (pythonService) {
+    pythonService.cleanup();
+    console.log('🐍 Python service cleaned up');
   }
 });
 
