@@ -5,6 +5,7 @@ import WorkspaceRulesModal from './components/WorkspaceRulesModal/WorkspaceRules
 import APIKeysModal from './components/APIKeysModal/APIKeysModal';
 import { MCPServersModal } from './components/MCPServersModal/MCPServersModal';
 import ConversationModesModal from './components/ConversationModesModal/ConversationModesModal';
+import { OctopusMode } from './components/OctopusMode/OctopusMode';
 import { AnalyticsView } from '../features/analytics/AnalyticsView';
 import KnowledgeGraphView from '../features/knowledgeGraph/KnowledgeGraphView';
 import { ConversationMode, DEFAULT_MODES } from '../core/ConversationModes';
@@ -50,6 +51,7 @@ function ChatApp() {
   const [showAPIKeysModal, setShowAPIKeysModal] = useState(false);
   const [showMCPModal, setShowMCPModal] = useState(false);
   const [showModesModal, setShowModesModal] = useState(false);
+  const [showOctopusMode, setShowOctopusMode] = useState(false);
   const [modes, setModes] = useState<ConversationMode[]>(DEFAULT_MODES);
   const [currentMode, setCurrentMode] = useState<ConversationMode>(DEFAULT_MODES[0]);
   const [splitLayout, setSplitLayout] = useState<'vertical' | 'horizontal'>('vertical');
@@ -98,6 +100,8 @@ function ChatApp() {
         setShowModesModal(true);
       } else if (action === 'openProject' || action === 'newProject') {
         setShowWorkspaceModal(true);
+      } else if (action === 'octopusMode') {
+        setShowOctopusMode(true);
       }
     };
 
@@ -724,6 +728,17 @@ function ChatApp() {
                     <div 
                       className="tool-item clickable" 
                       onClick={() => {
+                        setShowOctopusMode(true);
+                      }}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <span className="tool-icon">🐙</span>
+                      <span className="tool-name">Octopus Mode</span>
+                      <span className="active-badge">New!</span>
+                    </div>
+                    <div 
+                      className="tool-item clickable" 
+                      onClick={() => {
                         setSplitViewMode('graph');
                         setActiveTool(null);
                       }}
@@ -929,6 +944,10 @@ function ChatApp() {
         isOpen={showAPIKeysModal}
         onClose={() => setShowAPIKeysModal(false)}
       />
+      
+      {showOctopusMode && (
+        <OctopusMode onClose={() => setShowOctopusMode(false)} />
+      )}
       
       <MCPServersModal
         isOpen={showMCPModal}
