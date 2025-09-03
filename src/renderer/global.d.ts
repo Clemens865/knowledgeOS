@@ -111,6 +111,51 @@ interface ElectronAPI {
     buildGraph: (workspacePath: string) => Promise<{ success: boolean; graph?: any; error?: string }>;
     getNodeDetails: (workspacePath: string, nodeId: string) => Promise<{ success: boolean; node?: any; error?: string }>;
   };
+  
+  // Octopus Mode API
+  startOctopusCrawl: (args: {
+    url: string;
+    instruction?: string;
+    options?: {
+      depth?: number;
+      maxPages?: number;
+      includeSubdomains?: boolean;
+      respectRobotsTxt?: boolean;
+      selectors?: {
+        content?: string;
+        excludes?: string[];
+      };
+    };
+  }) => Promise<{
+    success: boolean;
+    pages?: any[];
+    totalPages?: number;
+    errors?: Array<{ url: string; error: string }>;
+    processedContent?: any;
+    instruction?: any;
+    error?: string;
+  }>;
+  saveToKnowledge: (args: {
+    content: string;
+    fileName: string;
+    metadata: any;
+  }) => Promise<{
+    success: boolean;
+    filePath?: string;
+    error?: string;
+  }>;
+  checkOctopusAvailability: () => Promise<{
+    available: boolean;
+    hasLLM: boolean;
+    features: {
+      basicCrawl: boolean;
+      intelligentCrawl: boolean;
+      multiPage: boolean;
+      instructionSupport: boolean;
+    };
+  }>;
+  onCrawlProgress: (callback: (progress: any) => void) => void;
+  removeOctopusListeners: () => void;
 }
 
 interface ConversationMode {

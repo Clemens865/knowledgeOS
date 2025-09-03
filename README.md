@@ -8,6 +8,7 @@ A revolutionary AI-powered knowledge management system that combines intelligent
 
 ## 🌟 What's New in v2.0
 
+- **🐙 Octopus Mode**: Intelligent web crawling with natural language instructions
 - **🎨 Vision AI Support**: Upload and analyze images with GPT-4o, GPT-4 Vision
 - **📊 Analytics Dashboard**: Obsidian-inspired knowledge insights
 - **🔌 MCP Integration**: Extend with external tools and services
@@ -73,6 +74,15 @@ npm start
 - **Smooth Animations**: Delightful user experience
 - **Responsive Layout**: Adapts to your workflow
 
+### 🐙 Octopus Mode - Web Intelligence
+- **No CORS Restrictions**: Direct web access using Electron's net module
+- **Natural Language Instructions**: Tell the AI what to extract or generate
+- **Smart Crawling**: Configure depth, max pages, and content selectors
+- **Multiple Processing Modes**: Extract, summarize, answer questions, compare, or generate content
+- **Quick Actions**: One-click buttons for common tasks like summarization or data extraction
+- **Live Progress Tracking**: See what's being crawled in real-time
+- **Content Preview**: Review extracted content before saving to knowledge base
+
 ## 📁 Project Structure
 
 ```
@@ -135,6 +145,7 @@ Customize system prompts per workspace:
 | Toggle Sidebar | `Cmd+B` | `Ctrl+B` |
 | Command Palette | `Cmd+K` | `Ctrl+K` |
 | Toggle Editor | `Cmd+E` | `Ctrl+E` |
+| Octopus Mode | `Cmd+Shift+W` | `Ctrl+Shift+W` |
 
 ## 🔧 Development
 

@@ -174,6 +174,20 @@ export function createMenu() {
       ]
     },
 
+    // Tools Menu
+    {
+      label: 'Tools',
+      submenu: [
+        {
+          label: '🐙 Octopus Mode',
+          accelerator: 'CmdOrCtrl+Shift+W',
+          click: () => {
+            BrowserWindow.getFocusedWindow()?.webContents.send('menu:octopusMode');
+          }
+        }
+      ]
+    },
+
     // Window Menu
     {
       label: 'Window',

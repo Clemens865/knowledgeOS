@@ -4,11 +4,12 @@ import { createWindow } from './window';
 import { setupIPC } from './ipc';
 import { createMenu } from './menu';
 import { setupWorkspaceHandlers } from './workspace';
-import { setupLLMHandlers } from './llmHandlers';
+import { setupLLMHandlers, getLLMService } from './llmHandlers';
 import { setupAnalyticsHandlers } from './analyticsHandlers';
 import { setupConversationModesHandlers } from './conversationModesHandlers';
 import { setupKnowledgeGraphHandlers } from './knowledgeGraphHandlers';
 import { setupKnowledgeAgentHandlers } from './knowledgeAgentHandlers';
+import { setupOctopusHandlers } from './octopusHandlers';
 import Store from 'electron-store';
 import { initMCPManager, getMCPManager } from './mcpManager';
 import { PythonServiceManager } from './services/PythonServiceManager';
@@ -116,6 +117,10 @@ app.whenReady().then(() => {
   setupAnalyticsHandlers();
   setupConversationModesHandlers();
   setupKnowledgeGraphHandlers();
+  
+  // Setup Octopus Mode with LLM service
+  const llmService = getLLMService();
+  setupOctopusHandlers(llmService);
   
   // Initialize MCP Manager
   initMCPManager();

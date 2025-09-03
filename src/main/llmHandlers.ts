@@ -9,6 +9,11 @@ const store = new Store();
 
 let llmService: LLMService | null = null;
 
+// Export getter for LLM service
+export function getLLMService(): LLMService | null {
+  return llmService;
+}
+
 // Default Knowledge Rules for the system
 export function getDefaultKnowledgeRules(): string {
   return `You are an intelligent knowledge management assistant for KnowledgeOS. Your primary role is to help users organize and extract knowledge from their conversations.

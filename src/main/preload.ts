@@ -32,6 +32,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
       'menu:mcpServers',
       'menu:openProject',
       'menu:newProject',
+      'menu:octopusMode',
     ];
     
     channels.forEach(channel => {
@@ -54,6 +55,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.removeAllListeners('menu:mcpServers');
     ipcRenderer.removeAllListeners('menu:openProject');
     ipcRenderer.removeAllListeners('menu:newProject');
+    ipcRenderer.removeAllListeners('menu:octopusMode');
   },
   
   // Settings API
@@ -109,5 +111,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
   knowledgeGraph: {
     buildGraph: (workspacePath: string) => ipcRenderer.invoke('knowledgeGraph:build', workspacePath),
     getNodeDetails: (workspacePath: string, nodeId: string) => ipcRenderer.invoke('knowledgeGraph:getNodeDetails', workspacePath, nodeId)
+  },
+  
+  // Octopus Mode API
+  startOctopusCrawl: (args: any) => ipcRenderer.invoke('octopus:start-crawl', args),
+  saveToKnowledge: (args: any) => ipcRenderer.invoke('octopus:save-to-knowledge', args),
+  checkOctopusAvailability: () => ipcRenderer.invoke('octopus:check-availability'),
+  onCrawlProgress: (callback: (progress: any) => void) => {
+    ipcRenderer.on('octopus:crawl-progress', (_, progress) => callback(progress));
+  },
+  removeOctopusListeners: () => {
+    ipcRenderer.removeAllListeners('octopus:crawl-progress');
   }
 });
