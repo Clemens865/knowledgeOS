@@ -13,6 +13,7 @@ A revolutionary AI-powered knowledge management system that combines intelligent
 - **🔌 MCP Integration**: Extend with external tools and services
 - **📝 Split Editor**: Side-by-side editing with resizable panes
 - **🧠 Multi-Provider AI**: Support for Claude, OpenAI, and Gemini
+- **🤖 Knowledge Agents**: Intelligent entity recognition and knowledge deduplication (Experimental)
 
 ## 🚀 Quick Start
 
@@ -24,8 +25,8 @@ A revolutionary AI-powered knowledge management system that combines intelligent
 ### Installation
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/knowledge-os.git
-cd knowledge-os
+git clone https://github.com/Clemens865/knowledgeOS.git
+cd knowledgeOS
 
 # Install dependencies
 npm install
@@ -227,9 +228,9 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ## 📮 Support
 
-- Report issues on [GitHub Issues](https://github.com/yourusername/knowledge-os/issues)
+- Report issues on [GitHub Issues](https://github.com/Clemens865/knowledgeOS/issues)
 - Join our [Discord community](https://discord.gg/knowledgeos)
-- Check the [Wiki](https://github.com/yourusername/knowledge-os/wiki) for detailed guides
+- Check the [Wiki](https://github.com/Clemens865/knowledgeOS/wiki) for detailed guides
 
 ## 🗺️ Roadmap
 
