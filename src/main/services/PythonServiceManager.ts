@@ -22,8 +22,8 @@ export class PythonServiceManager {
     // Determine Python executable path
     this.pythonPath = process.platform === 'win32' ? 'python' : 'python3';
     
-    // Path to the Python server script
-    this.serverPath = path.join(__dirname, '..', '..', '..', 'src', 'python', 'server.py');
+    // Path to the Python server script - using simple server for now
+    this.serverPath = path.join(__dirname, '..', '..', '..', 'src', 'python', 'simple_server.py');
   }
 
   /**

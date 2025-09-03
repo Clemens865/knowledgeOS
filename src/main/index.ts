@@ -125,7 +125,7 @@ app.whenReady().then(() => {
   pythonService = new PythonServiceManager();
   console.log('🐍 Starting Python Knowledge Service...');
   pythonService.start().then((success) => {
-    if (success) {
+    if (success && pythonService) {
       console.log('✅ Python Knowledge Service started successfully');
       setupKnowledgeAgentHandlers(pythonService);
     } else {
