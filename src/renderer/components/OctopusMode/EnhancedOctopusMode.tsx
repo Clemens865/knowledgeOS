@@ -122,7 +122,7 @@ export const EnhancedOctopusMode: React.FC<OctopusModeProps> = ({ onClose }) => 
       });
 
       if (crawlResult.success) {
-        setSessionId(crawlResult.sessionId);
+        setSessionId(crawlResult.sessionId || null);
         
         // Store raw content
         if (crawlResult.pages && crawlResult.pages.length > 0) {
@@ -168,7 +168,7 @@ export const EnhancedOctopusMode: React.FC<OctopusModeProps> = ({ onClose }) => 
       });
       
       if (result.success) {
-        setCurrentContent(result.content);
+        setCurrentContent(result.content || '');
         await loadSessionContent(sessionId);
         
         // Add to chat history
@@ -201,9 +201,9 @@ export const EnhancedOctopusMode: React.FC<OctopusModeProps> = ({ onClose }) => 
       });
       
       if (result.success) {
-        setCurrentContent(result.content);
+        setCurrentContent(result.content || '');
         setChatMessages(prev => [...prev, 
-          { role: 'assistant', content: result.content, timestamp: new Date() }
+          { role: 'assistant', content: result.content || 'Response processed', timestamp: new Date() }
         ]);
         await loadSessionContent(sessionId);
       } else {

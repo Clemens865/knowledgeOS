@@ -126,7 +126,8 @@ Always use these functions to maintain the knowledge base, but don't mention usi
     userMessage: string | MessageContent[],
     conversationHistory: Message[] = [],
     availableFiles?: string[],
-    functionResults?: any[]
+    functionResults?: any[],
+    includeTools: boolean = true
   ): Promise<LLMResponse> {
     const messages: Message[] = [
       { role: 'system', content: this.systemPrompt },
@@ -152,7 +153,7 @@ Always use these functions to maintain the knowledge base, but don't mention usi
     
     switch (this.provider.name.toLowerCase()) {
       case 'claude':
-        return this.sendToClaude(messages);
+        return this.sendToClaude(messages, includeTools);
       case 'openai':
         return this.sendToOpenAI(messages);
       case 'gemini':
@@ -162,7 +163,7 @@ Always use these functions to maintain the knowledge base, but don't mention usi
     }
   }
   
-  private async sendToClaude(messages: Message[]): Promise<LLMResponse> {
+  private async sendToClaude(messages: Message[], includeTools: boolean = true): Promise<LLMResponse> {
     const anthropicMessages = messages
       .filter(m => m.role !== 'system')
       .map(m => ({
@@ -193,7 +194,7 @@ Always use these functions to maintain the knowledge base, but don't mention usi
     console.log('System prompt length:', systemPrompt.length);
     console.log('System prompt includes Knowledge Rules:', systemPrompt.includes('knowledge management'));
     console.log('Number of messages:', anthropicMessages.length);
-    console.log('Tools enabled:', true);
+    console.log('Tools enabled:', includeTools);
     
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -203,11 +204,11 @@ Always use these functions to maintain the knowledge base, but don't mention usi
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: this.provider.model || 'claude-3-sonnet-20240229',
+        model: this.provider.model || 'claude-opus-4-1-20250805',
         messages: anthropicMessages,
         system: systemPrompt,
         max_tokens: 4096,
-        tools: this.getClaudeTools()
+        ...(includeTools ? { tools: this.getClaudeTools() } : {})
       })
     });
     

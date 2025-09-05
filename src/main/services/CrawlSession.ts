@@ -119,7 +119,7 @@ export class CrawlSessionManager {
     const prompt = `Based on the following web content, ${instruction}\n\nContent:\n${combinedText}`;
     
     try {
-      const response = await this.llmService.sendMessage(prompt, []);
+      const response = await this.llmService.sendMessage(prompt, [], undefined, undefined, false);
       
       const processedVersion: ProcessedVersion = {
         id: this.generateVersionId(),
@@ -172,7 +172,7 @@ export class CrawlSessionManager {
     const contextPrompt = `You are helping refine web-crawled content. Current content:\n\n${currentContent}\n\nUser request: ${userMessage}`;
 
     try {
-      const response = await this.llmService.sendMessage(contextPrompt, conversationContext);
+      const response = await this.llmService.sendMessage(contextPrompt, conversationContext, undefined, undefined, false);
       
       // Save refinement to history
       session.refinementHistory.push(

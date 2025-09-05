@@ -11,7 +11,6 @@ const store = new Store();
 
 let intelligentCrawler: IntelligentWebCrawler | null = null;
 let crawlInProgress = false;
-let currentSessionId: string | null = null;
 
 export function setupOctopusHandlers() {
   // We'll initialize the intelligent crawler dynamically when needed
@@ -104,7 +103,6 @@ export function setupOctopusHandlers() {
 
       // Create a crawl session
       const sessionId = crawlSessionManager.createSession(url, result.pages);
-      currentSessionId = sessionId;
 
       // Set LLM service in session manager
       const llmService = getLLMService();
@@ -167,49 +165,7 @@ export function setupOctopusHandlers() {
     }
   });
 
-  // Save to knowledge base handler
-  ipcMain.handle('octopus:save-to-knowledge', async (_, args: {
-    content: string;
-    fileName: string;
-    metadata: any;
-  }) => {
-    try {
-      const { content, fileName, metadata } = args;
-      
-      // Get workspace path from store
-      const workspacePath = (store as any).get('currentWorkspace') || process.cwd();
-      const filePath = path.join(workspacePath, fileName);
-
-      // Create directory if it doesn't exist
-      const dir = path.dirname(filePath);
-      await fs.mkdir(dir, { recursive: true });
-
-      // Add metadata header to content
-      const fullContent = `---
-source: ${metadata.source}
-instruction: ${metadata.instruction}
-crawledAt: ${metadata.crawledAt}
-pagesProcessed: ${metadata.pagesProcessed}
-type: web-crawl
----
-
-${content}`;
-
-      // Save file
-      await fs.writeFile(filePath, fullContent, 'utf-8');
-
-      return {
-        success: true,
-        filePath
-      };
-    } catch (error) {
-      console.error('Save error:', error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
-      };
-    }
-  });
+  // Save to knowledge base handler is defined later in the file
 
   // Check if Octopus Mode is available
   ipcMain.handle('octopus:check-availability', async () => {
@@ -395,6 +351,22 @@ ${content}`;
           success: false,
           error: 'No content to save'
         };
+      }
+      
+      // Add metadata header if metadata is provided
+      if (args.metadata) {
+        const metadataHeader = `---
+source: ${args.metadata.source || 'unknown'}
+instruction: ${args.metadata.instruction || 'No instruction provided'}
+crawledAt: ${args.metadata.crawledAt || new Date().toISOString()}
+pagesProcessed: ${args.metadata.pagesProcessed || 'unknown'}
+sessionId: ${args.metadata.sessionId || 'unknown'}
+exportedAt: ${args.metadata.exportedAt || new Date().toISOString()}
+type: web-crawl
+---
+
+`;
+        contentToSave = metadataHeader + contentToSave;
       }
       
       const workspacePath = (store as any).get('currentWorkspace') || process.cwd();
