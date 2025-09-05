@@ -4,7 +4,7 @@ import { createWindow } from './window';
 import { setupIPC } from './ipc';
 import { createMenu } from './menu';
 import { setupWorkspaceHandlers } from './workspace';
-import { setupLLMHandlers, getLLMService } from './llmHandlers';
+import { setupLLMHandlers } from './llmHandlers';
 import { setupAnalyticsHandlers } from './analyticsHandlers';
 import { setupConversationModesHandlers } from './conversationModesHandlers';
 import { setupKnowledgeGraphHandlers } from './knowledgeGraphHandlers';
