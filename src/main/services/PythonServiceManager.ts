@@ -19,8 +19,20 @@ export class PythonServiceManager {
   constructor() {
     this.apiClient = new KnowledgeAPIClient();
     
-    // Determine Python executable path
-    this.pythonPath = process.platform === 'win32' ? 'python' : 'python3';
+    // Determine Python executable path - check for Homebrew Python on macOS
+    if (process.platform === 'darwin') {
+      // On macOS, check for Homebrew Python first
+      const fs = require('fs');
+      if (fs.existsSync('/opt/homebrew/bin/python3')) {
+        this.pythonPath = '/opt/homebrew/bin/python3';
+      } else if (fs.existsSync('/usr/local/bin/python3')) {
+        this.pythonPath = '/usr/local/bin/python3';
+      } else {
+        this.pythonPath = 'python3';
+      }
+    } else {
+      this.pythonPath = process.platform === 'win32' ? 'python' : 'python3';
+    }
     
     // Try enhanced server first, fall back to simple if needed
     const enhancedPath = path.join(__dirname, '..', '..', '..', 'src', 'python', 'enhanced_server.py');
