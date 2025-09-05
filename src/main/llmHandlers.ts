@@ -4,10 +4,27 @@ import * as path from 'path';
 import { LLMService, LLMProvider, FileOperation } from '../core/LLMService';
 import Store from 'electron-store';
 import { getMCPManager } from './mcpManager';
+import { EnhancedKnowledgeAPIClient } from './services/EnhancedKnowledgeAPIClient';
 
 const store = new Store();
 
 let llmService: LLMService | null = null;
+let knowledgeClient: EnhancedKnowledgeAPIClient | null = null;
+
+// Initialize knowledge client
+async function initializeKnowledgeClient() {
+  if (!knowledgeClient) {
+    knowledgeClient = new EnhancedKnowledgeAPIClient();
+    const isHealthy = await knowledgeClient.checkHealth();
+    if (isHealthy) {
+      console.log('✅ Enhanced Knowledge Service connected');
+    } else {
+      console.warn('⚠️ Enhanced Knowledge Service not available - falling back to basic file operations');
+      knowledgeClient = null;
+    }
+  }
+  return knowledgeClient;
+}
 
 // Export getter for LLM service
 export function getLLMService(): LLMService | null {
@@ -70,6 +87,9 @@ RESPONSE STYLE:
 }
 
 export function setupLLMHandlers() {
+  // Initialize knowledge client on startup
+  initializeKnowledgeClient().catch(console.warn);
+  
   // Initialize LLM service
   ipcMain.handle('llm:initialize', async (_, provider: LLMProvider, workspacePath: string) => {
     try {
@@ -335,6 +355,43 @@ export function setupLLMHandlers() {
       return { success: false, error: error instanceof Error ? error.message : String(error) };
     }
   });
+  
+  // Enhanced knowledge search
+  ipcMain.handle('knowledge:search', async (_, query: string, searchType?: string, limit?: number) => {
+    try {
+      const client = await initializeKnowledgeClient();
+      if (!client) {
+        return { success: false, error: 'Enhanced knowledge service not available' };
+      }
+      
+      const results = await client.search({
+        query,
+        type: searchType as any || 'hybrid',
+        limit: limit || 10
+      });
+      
+      return { success: true, results };
+    } catch (error) {
+      console.error('Knowledge search error:', error);
+      return { success: false, error: error instanceof Error ? error.message : String(error) };
+    }
+  });
+  
+  // Get knowledge statistics
+  ipcMain.handle('knowledge:statistics', async () => {
+    try {
+      const client = await initializeKnowledgeClient();
+      if (!client) {
+        return { success: false, error: 'Enhanced knowledge service not available' };
+      }
+      
+      const stats = await client.getStatistics();
+      return { success: true, statistics: stats };
+    } catch (error) {
+      console.error('Failed to get knowledge statistics:', error);
+      return { success: false, error: error instanceof Error ? error.message : String(error) };
+    }
+  });
 }
 
 async function executeFileOperation(operation: FileOperation, workspacePath: string): Promise<void> {
@@ -448,6 +505,31 @@ async function executeFileOperationWithResult(operation: FileOperation, workspac
       
       await fs.writeFile(fullPath, finalContent);
       console.log(`File ${fileExists ? 'updated' : 'created'}: ${operation.path}`);
+      
+      // Enhanced knowledge save with entity extraction
+      try {
+        const client = await initializeKnowledgeClient();
+        if (client) {
+          const saveResult = await client.save({
+            content: finalContent,
+            title: operation.path,
+            metadata: {
+              source: 'chat',
+              path: operation.path,
+              workspace: workspacePath,
+              timestamp: new Date().toISOString()
+            },
+            mode: fileExists ? 'update' : 'new'
+          });
+          
+          if (saveResult.success && saveResult.entities_extracted) {
+            console.log(`🧠 Enhanced: Extracted ${saveResult.entities_extracted} entities from ${operation.path}`);
+          }
+        }
+      } catch (error) {
+        console.warn('Enhanced knowledge save failed, file saved normally:', error);
+      }
+      
       return {
         operation: 'write_file',
         path: operation.path,
@@ -478,6 +560,30 @@ async function executeFileOperationWithResult(operation: FileOperation, workspac
       
       await fs.writeFile(fullPath, finalContent);
       console.log(`Content appended to: ${operation.path}`);
+      
+      // Enhanced knowledge append with entity extraction
+      try {
+        const client = await initializeKnowledgeClient();
+        if (client) {
+          const appendResult = await client.append(
+            operation.content,
+            operation.path,
+            {
+              source: 'chat',
+              path: operation.path,
+              workspace: workspacePath,
+              timestamp: new Date().toISOString()
+            }
+          );
+          
+          if (appendResult.success && appendResult.entities_extracted) {
+            console.log(`🧠 Enhanced: Extracted ${appendResult.entities_extracted} entities from appended content`);
+          }
+        }
+      } catch (error) {
+        console.warn('Enhanced knowledge append failed, content appended normally:', error);
+      }
+      
       return {
         operation: 'append_file',
         path: operation.path,

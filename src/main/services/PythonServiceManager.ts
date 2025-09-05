@@ -22,8 +22,13 @@ export class PythonServiceManager {
     // Determine Python executable path
     this.pythonPath = process.platform === 'win32' ? 'python' : 'python3';
     
-    // Path to the Python server script - using simple server for now
-    this.serverPath = path.join(__dirname, '..', '..', '..', 'src', 'python', 'simple_server.py');
+    // Try enhanced server first, fall back to simple if needed
+    const enhancedPath = path.join(__dirname, '..', '..', '..', 'src', 'python', 'enhanced_server.py');
+    const simplePath = path.join(__dirname, '..', '..', '..', 'src', 'python', 'simple_server.py');
+    
+    // Check if enhanced server exists, otherwise use simple
+    const fs = require('fs');
+    this.serverPath = fs.existsSync(enhancedPath) ? enhancedPath : simplePath;
   }
 
   /**
@@ -38,12 +43,17 @@ export class PythonServiceManager {
     try {
       console.log('Starting Python Knowledge Service...');
       
-      // Spawn Python process
+      // Get workspace path from store
+      const { store } = require('electron');
+      const workspacePath = store.get('currentWorkspace') || process.cwd();
+      
+      // Spawn Python process with workspace environment
       this.pythonProcess = spawn(this.pythonPath, [this.serverPath], {
         cwd: path.dirname(this.serverPath),
         env: {
           ...process.env,
           PYTHONUNBUFFERED: '1', // Ensure real-time output
+          KNOWLEDGE_WORKSPACE: workspacePath, // Pass workspace to Python
         },
       });
 
