@@ -128,6 +128,7 @@ interface ElectronAPI {
     };
   }) => Promise<{
     success: boolean;
+    sessionId?: string;
     pages?: any[];
     totalPages?: number;
     errors?: Array<{ url: string; error: string }>;
@@ -136,7 +137,8 @@ interface ElectronAPI {
     error?: string;
   }>;
   saveToKnowledge: (args: {
-    content: string;
+    sessionId?: string;
+    content?: string;
     fileName: string;
     metadata: any;
   }) => Promise<{
@@ -152,10 +154,49 @@ interface ElectronAPI {
       intelligentCrawl: boolean;
       multiPage: boolean;
       instructionSupport: boolean;
+      interactiveRefinement: boolean;
+      multiStepWorkflow: boolean;
     };
   }>;
   onCrawlProgress: (callback: (progress: any) => void) => void;
   removeOctopusListeners: () => void;
+  
+  // Enhanced Octopus Mode Session APIs
+  processWithInstruction: (args: {
+    sessionId: string;
+    instruction: string;
+  }) => Promise<{
+    success: boolean;
+    content?: string;
+    versionId?: string;
+    error?: string;
+  }>;
+  
+  refineContent: (args: {
+    sessionId: string;
+    message: string;
+  }) => Promise<{
+    success: boolean;
+    content?: string;
+    error?: string;
+  }>;
+  
+  getOctopusSession: (sessionId: string) => Promise<{
+    success: boolean;
+    session?: any;
+    currentContent?: string;
+    versions?: any[];
+    error?: string;
+  }>;
+  
+  exportOctopusContent: (args: {
+    sessionId: string;
+    format: 'markdown' | 'json' | 'knowledge';
+  }) => Promise<{
+    success: boolean;
+    data?: any;
+    error?: string;
+  }>;
 }
 
 interface ConversationMode {

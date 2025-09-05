@@ -5,7 +5,7 @@ import WorkspaceRulesModal from './components/WorkspaceRulesModal/WorkspaceRules
 import APIKeysModal from './components/APIKeysModal/APIKeysModal';
 import { MCPServersModal } from './components/MCPServersModal/MCPServersModal';
 import ConversationModesModal from './components/ConversationModesModal/ConversationModesModal';
-import { OctopusMode } from './components/OctopusMode/OctopusMode';
+import { EnhancedOctopusMode } from './components/OctopusMode/EnhancedOctopusMode';
 import { AnalyticsView } from '../features/analytics/AnalyticsView';
 import KnowledgeGraphView from '../features/knowledgeGraph/KnowledgeGraphView';
 import { ConversationMode, DEFAULT_MODES } from '../core/ConversationModes';
@@ -946,7 +946,7 @@ function ChatApp() {
       />
       
       {showOctopusMode && (
-        <OctopusMode onClose={() => setShowOctopusMode(false)} />
+        <EnhancedOctopusMode onClose={() => setShowOctopusMode(false)} />
       )}
       
       <MCPServersModal
