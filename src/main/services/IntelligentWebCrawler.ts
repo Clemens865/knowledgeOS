@@ -121,7 +121,7 @@ Examples:
 Return only the JSON object, no explanation:`;
 
     try {
-      const response = await this.llmService.sendMessage(prompt, []);
+      const response = await this.llmService.sendMessage(prompt, [], undefined, undefined, false);
       const parsed = JSON.parse(response.content || '{}');
       
       // Validate and provide defaults
@@ -302,7 +302,7 @@ ${content.substring(0, 8000)}
 
 Extracted Information:`;
 
-    const response = await this.llmService.sendMessage(prompt, []);
+    const response = await this.llmService.sendMessage(prompt, [], undefined, undefined, false);
     return response.content || content;
   }
 
@@ -320,7 +320,7 @@ ${content.substring(0, 8000)}
 
 Summary:`;
 
-    const response = await this.llmService.sendMessage(prompt, []);
+    const response = await this.llmService.sendMessage(prompt, [], undefined, undefined, false);
     return response.content || content;
   }
 
@@ -340,7 +340,7 @@ ${content.substring(0, 8000)}
 
 Answer:`;
 
-    const response = await this.llmService.sendMessage(prompt, []);
+    const response = await this.llmService.sendMessage(prompt, [], undefined, undefined, false);
     return response.content || content;
   }
 
@@ -357,7 +357,7 @@ ${content.substring(0, 6000)}
 
 Generated Content:`;
 
-    const response = await this.llmService.sendMessage(prompt, []);
+    const response = await this.llmService.sendMessage(prompt, [], undefined, undefined, false);
     return response.content || content;
   }
 
@@ -377,7 +377,7 @@ ${content.substring(0, 8000)}
 
 Comparison:`;
 
-    const response = await this.llmService.sendMessage(prompt, []);
+    const response = await this.llmService.sendMessage(prompt, [], undefined, undefined, false);
     return response.content || content;
   }
 
@@ -396,7 +396,7 @@ ${content.substring(0, 4000)}
 Entities (JSON array only):`;
 
     try {
-      const response = await this.llmService.sendMessage(prompt, []);
+      const response = await this.llmService.sendMessage(prompt, [], undefined, undefined, false);
       return JSON.parse(response.content || '[]');
     } catch {
       return [];

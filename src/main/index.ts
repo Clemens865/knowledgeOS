@@ -4,7 +4,7 @@ import { createWindow } from './window';
 import { setupIPC } from './ipc';
 import { createMenu } from './menu';
 import { setupWorkspaceHandlers } from './workspace';
-import { setupLLMHandlers, getLLMService } from './llmHandlers';
+import { setupLLMHandlers } from './llmHandlers';
 import { setupAnalyticsHandlers } from './analyticsHandlers';
 import { setupConversationModesHandlers } from './conversationModesHandlers';
 import { setupKnowledgeGraphHandlers } from './knowledgeGraphHandlers';
@@ -118,9 +118,8 @@ app.whenReady().then(() => {
   setupConversationModesHandlers();
   setupKnowledgeGraphHandlers();
   
-  // Setup Octopus Mode with LLM service
-  const llmService = getLLMService();
-  setupOctopusHandlers(llmService);
+  // Setup Octopus Mode (it will get LLM service dynamically)
+  setupOctopusHandlers();
   
   // Initialize MCP Manager
   initMCPManager();

@@ -1,0 +1,193 @@
+.file-selector {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.file-selector-header {
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.search-bar {
+  margin-bottom: 12px;
+}
+
+.search-input {
+  width: 100%;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: #fff;
+  font-size: 14px;
+}
+
+.search-input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.filter-buttons {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.filter-btn {
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filter-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.filter-btn.active {
+  background: rgba(76, 175, 255, 0.2);
+  border-color: #4cafff;
+  color: #4cafff;
+}
+
+.selection-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.action-btn {
+  padding: 6px 12px;
+  background: rgba(76, 175, 255, 0.1);
+  border: 1px solid rgba(76, 175, 255, 0.3);
+  border-radius: 6px;
+  color: #4cafff;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.action-btn:hover {
+  background: rgba(76, 175, 255, 0.2);
+  border-color: #4cafff;
+}
+
+.selection-count {
+  margin-left: auto;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.file-tree {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+}
+
+.file-node {
+  user-select: none;
+}
+
+.file-node-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.file-node-content:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.file-node-content.selected {
+  background: rgba(76, 175, 255, 0.1);
+}
+
+.expand-btn {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.expand-btn:hover {
+  color: #fff;
+}
+
+.file-node-content input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  cursor: pointer;
+}
+
+.file-icon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.file-name {
+  flex: 1;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.9);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-size {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.file-children {
+  margin-left: 0;
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 14px;
+}
+
+/* Scrollbar styling */
+.file-tree::-webkit-scrollbar {
+  width: 8px;
+}
+
+.file-tree::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+.file-tree::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+.file-tree::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}

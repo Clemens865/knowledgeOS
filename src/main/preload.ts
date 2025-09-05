@@ -122,5 +122,18 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   removeOctopusListeners: () => {
     ipcRenderer.removeAllListeners('octopus:crawl-progress');
-  }
+  },
+  
+  // Enhanced Octopus Mode Session APIs
+  processWithInstruction: (args: { sessionId: string; instruction: string }) => 
+    ipcRenderer.invoke('octopus:process-instruction', args),
+  
+  refineContent: (args: { sessionId: string; message: string }) => 
+    ipcRenderer.invoke('octopus:refine-content', args),
+  
+  getOctopusSession: (sessionId: string) => 
+    ipcRenderer.invoke('octopus:get-session', sessionId),
+  
+  exportOctopusContent: (args: { sessionId: string; format: 'markdown' | 'json' | 'knowledge' }) => 
+    ipcRenderer.invoke('octopus:export-content', args)
 });
