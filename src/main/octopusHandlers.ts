@@ -1,7 +1,7 @@
 import { ipcMain } from 'electron';
 import { WebCrawler, CrawlOptions } from './services/WebCrawler';
 import { IntelligentWebCrawler } from './services/IntelligentWebCrawler';
-import { LLMService } from '../core/LLMService';
+import { getLLMService } from './llmHandlers';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import Store from 'electron-store';
@@ -11,12 +11,8 @@ const store = new Store();
 let intelligentCrawler: IntelligentWebCrawler | null = null;
 let crawlInProgress = false;
 
-export function setupOctopusHandlers(llmService: LLMService | null) {
-  // Initialize intelligent crawler if LLM service is available
-  if (llmService) {
-    intelligentCrawler = new IntelligentWebCrawler();
-    intelligentCrawler.setLLMService(llmService);
-  }
+export function setupOctopusHandlers() {
+  // We'll initialize the intelligent crawler dynamically when needed
 
   // Start crawl handler
   ipcMain.handle('octopus:start-crawl', async (event, args: {
@@ -47,9 +43,18 @@ export function setupOctopusHandlers(llmService: LLMService | null) {
 
       let result;
 
+      // Get the current LLM service dynamically
+      const currentLLMService = getLLMService();
+
       // Use intelligent crawler if instruction is provided and LLM is available
-      if (instruction && intelligentCrawler) {
+      if (instruction && currentLLMService) {
         console.log('Starting intelligent crawl with instruction:', instruction);
+        
+        // Create or update the intelligent crawler with the current LLM service
+        if (!intelligentCrawler) {
+          intelligentCrawler = new IntelligentWebCrawler();
+        }
+        intelligentCrawler.setLLMService(currentLLMService);
         
         // Send progress update
         event.sender.send('octopus:crawl-progress', {
@@ -174,14 +179,17 @@ ${content}`;
 
   // Check if Octopus Mode is available
   ipcMain.handle('octopus:check-availability', async () => {
+    const currentLLMService = getLLMService();
+    const hasLLM = currentLLMService !== null;
+    
     return {
       available: true,
-      hasLLM: intelligentCrawler !== null,
+      hasLLM: hasLLM,
       features: {
         basicCrawl: true,
-        intelligentCrawl: intelligentCrawler !== null,
+        intelligentCrawl: hasLLM,
         multiPage: true,
-        instructionSupport: intelligentCrawler !== null
+        instructionSupport: hasLLM
       }
     };
   });

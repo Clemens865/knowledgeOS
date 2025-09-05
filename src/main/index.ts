@@ -118,9 +118,8 @@ app.whenReady().then(() => {
   setupConversationModesHandlers();
   setupKnowledgeGraphHandlers();
   
-  // Setup Octopus Mode with LLM service
-  const llmService = getLLMService();
-  setupOctopusHandlers(llmService);
+  // Setup Octopus Mode (it will get LLM service dynamically)
+  setupOctopusHandlers();
   
   // Initialize MCP Manager
   initMCPManager();
