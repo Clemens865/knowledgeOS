@@ -15,9 +15,11 @@ export class PythonServiceManager {
   private maxRetries: number = 30;
   private pythonPath: string;
   private serverPath: string;
+  private workspacePath: string;
 
-  constructor() {
+  constructor(workspacePath?: string) {
     this.apiClient = new KnowledgeAPIClient();
+    this.workspacePath = workspacePath || process.cwd();
     
     // Determine Python executable path - check for Homebrew Python on macOS
     if (process.platform === 'darwin') {
@@ -55,9 +57,8 @@ export class PythonServiceManager {
     try {
       console.log('Starting Python Knowledge Service...');
       
-      // Get workspace path from store
-      const { store } = require('electron');
-      const workspacePath = store.get('currentWorkspace') || process.cwd();
+      // Use workspace path from constructor or current directory
+      const workspacePath = this.workspacePath;
       
       // Spawn Python process with workspace environment
       this.pythonProcess = spawn(this.pythonPath, [this.serverPath], {

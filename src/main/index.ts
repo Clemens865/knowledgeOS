@@ -126,7 +126,11 @@ app.whenReady().then(() => {
   console.log('🔌 MCP Manager initialized');
   
   // Initialize Python Knowledge Service
-  pythonService = new PythonServiceManager();
+  // Get the workspace path from store
+  const workspaceStore = new Store();
+  const workspacePath = (workspaceStore as any).get('currentWorkspace') || process.cwd();
+  
+  pythonService = new PythonServiceManager(workspacePath);
   console.log('🐍 Starting Python Knowledge Service...');
   pythonService.start().then((success) => {
     if (success && pythonService) {

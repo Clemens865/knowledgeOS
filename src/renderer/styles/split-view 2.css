@@ -1,0 +1,125 @@
+/* Split View Styles */
+
+.split-view-panel {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--background-primary);
+  overflow: hidden;
+}
+
+.split-view-toggles {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  gap: 8px;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(10px);
+  padding: 8px;
+  border-radius: 12px;
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.split-toggle {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  border: 1px solid var(--glass-border);
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.split-toggle:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(142, 124, 195, 0.3);
+}
+
+.split-toggle.active {
+  background: var(--accent-gradient);
+  border-color: var(--accent-color);
+  box-shadow: 0 4px 12px rgba(142, 124, 195, 0.4);
+}
+
+.layout-toggle {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  border: 1px solid var(--glass-border);
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 8px;
+  padding-left: 8px;
+  border-left: 1px solid var(--glass-border);
+}
+
+.layout-toggle:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+/* Ensure full height for graph and analytics */
+.split-view-panel .knowledge-graph-container,
+.split-view-panel .analytics-container {
+  height: 100%;
+  width: 100%;
+}
+
+/* Adjust editor styles when in split view */
+.split-view-panel .file-editor {
+  height: 100%;
+}
+
+/* Hide old editor toggle */
+.editor-toggle {
+  display: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .split-view-toggles {
+    bottom: 10px;
+    right: 10px;
+    padding: 6px;
+    gap: 6px;
+  }
+  
+  .split-toggle,
+  .layout-toggle {
+    width: 36px;
+    height: 36px;
+    font-size: 18px;
+  }
+}
+
+/* Animation for split view transitions */
+.split-view-panel > * {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
