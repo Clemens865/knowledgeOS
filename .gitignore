@@ -64,3 +64,5 @@ knowledge-base/temporal/memories/
 knowledge-base/temporal/journal/
 knowledge-base/data/raw/
 knowledge-base/data/processed/__pycache__/
+**/__pycache__/
+*.pyc

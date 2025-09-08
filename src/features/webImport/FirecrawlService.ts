@@ -1,4 +1,10 @@
-import FirecrawlApp from '@mendable/firecrawl-js';
+// Firecrawl is optional - will be loaded if available
+let FirecrawlApp: any;
+try {
+  FirecrawlApp = require('@mendable/firecrawl-js').default;
+} catch (e) {
+  console.log('Firecrawl not installed - web import features disabled');
+}
 
 export interface WebImportOptions {
   url: string;
@@ -22,7 +28,7 @@ export interface WebContent {
 }
 
 class FirecrawlService {
-  private firecrawl: FirecrawlApp | null = null;
+  private firecrawl: any | null = null;
   private apiKey: string | null = null;
 
   constructor() {
@@ -192,7 +198,7 @@ ${content.markdown || content.content}
     
     // Create imported directory if it doesn't exist
     if (window.electronAPI?.writeFile) {
-      await window.electronAPI.ensureDir(`${workspacePath}/imported`);
+      await window.electronAPI?.ensureDir?.(`${workspacePath}/imported`);
       await window.electronAPI.writeFile(filePath, noteContent);
     }
     

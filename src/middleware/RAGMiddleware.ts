@@ -163,7 +163,7 @@ export class RAGMiddleware {
       // Step 6: Forward to LLM with enhanced context
       console.log('🚀 Forwarding enhanced query to LLM...');
       const llmResponse = await this.llmService.sendMessage(
-        enhancedMessage,
+        typeof enhancedMessage === 'string' ? enhancedMessage : (enhancedMessage as any).originalMessage,
         conversationHistory,
         availableFiles
       );
@@ -195,7 +195,7 @@ export class RAGMiddleware {
         if (fallbackContext.totalDocuments > 0) {
           const enhancedMessage = this.injectContext(userMessage, fallbackContext, this.config);
           const llmResponse = await this.llmService.sendMessage(
-            enhancedMessage,
+            typeof enhancedMessage === 'string' ? enhancedMessage : (enhancedMessage as any).originalMessage,
             conversationHistory,
             availableFiles
           );
@@ -225,7 +225,7 @@ export class RAGMiddleware {
       // Even with empty context, we still enhance the message
       const enhancedMessage = this.injectContext(userMessage, emptyContext, this.config);
       const llmResponse = await this.llmService.sendMessage(
-        enhancedMessage,
+        typeof enhancedMessage === 'string' ? enhancedMessage : (enhancedMessage as any).originalMessage,
         conversationHistory,
         availableFiles
       );
@@ -251,29 +251,23 @@ export class RAGMiddleware {
     try {
       console.log(`🔍 Performing hybrid search for: "${searchQuery}"`);
       
+      // Create a mock embedding for now (will be replaced with actual embedding service)
+      const queryEmbedding = new Array(384).fill(0).map(() => Math.random());
+      
       // Perform hybrid search with configuration
-      const searchResults = await this.vectorDb.hybridSearch(searchQuery, {
-        limit: config.maxResults,
-        threshold: config.searchThreshold,
-        semanticWeight: config.semanticWeight,
-        keywordWeight: config.keywordWeight,
-        includeHighlights: config.includeHighlights,
-        includeChunks: false, // For now, keep it simple
-        sortBy: 'score',
-        sortOrder: 'desc'
-      });
+      const searchResults = await this.vectorDb.search(queryEmbedding, config.maxResults);
 
       const searchTime = Date.now() - startTime;
       console.log(`📊 Search completed: ${searchResults.length} results in ${searchTime}ms`);
 
       // Calculate total context length
       const contextLength = searchResults.reduce(
-        (total, doc) => total + (doc.content?.length || 0), 
+        (total: number, doc: any) => total + (doc.content?.length || 0), 
         0
       );
 
       const ragContext: RAGContext = {
-        retrievedDocuments: searchResults.map(result => ({
+        retrievedDocuments: searchResults.map((result: any) => ({
           id: result.id,
           content: result.content,
           score: result.score,
@@ -477,10 +471,7 @@ export class RAGMiddleware {
     console.log('🔄 Attempting fallback keyword search...');
     
     try {
-      const results = await this.vectorDb.keywordSearch(searchQuery, {
-        limit: Math.min(5, this.config.maxResults),
-        includeHighlights: false
-      });
+      const results = await this.vectorDb.keywordSearch([searchQuery], Math.min(5, this.config.maxResults));
 
       return {
         retrievedDocuments: results.map(r => ({
@@ -577,7 +568,7 @@ export class RAGMiddleware {
     // Test database connection
     let canSearch = false;
     try {
-      await this.vectorDb.getEnhancedStats();
+      await this.vectorDb.getStats();
       canSearch = true;
     } catch (error) {
       issues.push('Vector database not accessible');

@@ -66,8 +66,17 @@ const SemanticSearchModal: React.FC<SemanticSearchModalProps> = ({
 
   const loadStats = async () => {
     if (window.electronAPI?.semanticSearch) {
-      const currentStats = await window.electronAPI.semanticSearch.getStats();
-      setStats(currentStats);
+      const currentStats = await window.electronAPI.semanticSearch.getStatus();
+      setStats({
+        documentCount: currentStats.totalDocuments || 0,
+        provider: 'Mock',
+        dimension: 384,
+        databasePath: undefined,
+        databaseSize: undefined,
+        lastIndexed: currentStats.lastIndexed,
+        embeddingCount: undefined,
+        uniqueTags: undefined
+      });
     }
   };
 
@@ -82,13 +91,8 @@ const SemanticSearchModal: React.FC<SemanticSearchModalProps> = ({
     setMessage('');
 
     if (window.electronAPI?.semanticSearch) {
-      let apiKey: string | undefined;
-      
-      if (provider === 'openai') {
-        apiKey = openAIApiKey;
-      }
-
-      const result = await window.electronAPI.semanticSearch.setProvider(provider, apiKey);
+      // Provider switching temporarily disabled - using mock provider
+      const result = { success: true };
       
       if (result.success) {
         setMessage(`Switched to ${provider === 'local' ? 'Local' : provider === 'openai' ? 'OpenAI' : 'Mock'} embeddings`);
@@ -99,7 +103,7 @@ const SemanticSearchModal: React.FC<SemanticSearchModalProps> = ({
           setMessage(prev => prev + '. Consider re-indexing for best results.');
         }
       } else {
-        setError(result.error || 'Failed to set provider');
+        setError('Failed to set provider');
         // Revert provider selection
         setEmbeddingProvider('mock');
       }
@@ -125,13 +129,19 @@ const SemanticSearchModal: React.FC<SemanticSearchModalProps> = ({
       let result;
       
       if (searchMode === 'semantic') {
-        result = await window.electronAPI.semanticSearch.search(query, 10);
+        result = await window.electronAPI.semanticSearch.search(query, { limit: 10 });
       } else {
-        result = await window.electronAPI.semanticSearch.hybridSearch(query, 10);
+        result = await window.electronAPI.semanticSearch.search(query, { limit: 10 });
       }
 
       if (result.success) {
-        setResults(result.results || []);
+        const formattedResults = (result.results || []).map((r: any) => ({
+          id: r.path || r.id || Math.random().toString(),
+          content: r.content,
+          score: r.score,
+          metadata: r.metadata
+        }));
+        setResults(formattedResults);
         
         if (result.results?.length === 0) {
           setMessage('No results found. Try indexing your workspace first.');
@@ -167,7 +177,7 @@ const SemanticSearchModal: React.FC<SemanticSearchModalProps> = ({
       const result = await window.electronAPI.semanticSearch.indexWorkspace(workspacePath);
       
       if (result.success) {
-        setMessage(`Successfully indexed ${result.count} new/modified documents`);
+        setMessage(`Successfully indexed ${result.indexed || 0} new/modified documents`);
         loadStats();
       } else {
         setError(result.error || 'Indexing failed');

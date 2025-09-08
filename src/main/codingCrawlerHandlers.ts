@@ -18,6 +18,24 @@ export function setupCodingCrawlerHandlers() {
   // Initialize crawler service
   crawlerService = new CodingCrawlerService();
 
+  // Get coding workspace
+  ipcMain.handle('coding-crawler:get-workspace', async () => {
+    const codingWorkspace = (store as any).get('codingWorkspace') || 
+      path.join(process.env.HOME || process.env.USERPROFILE || '', 'Documents', 'My-Coding-Projects');
+    return codingWorkspace;
+  });
+
+  // Set coding workspace
+  ipcMain.handle('coding-crawler:set-workspace', async (_, workspacePath) => {
+    (store as any).set('codingWorkspace', workspacePath);
+    // Restart Python service with new workspace
+    if (pythonProcess) {
+      pythonProcess.kill();
+      pythonProcess = null;
+    }
+    return { success: true, workspace: workspacePath };
+  });
+
   // Start Python coding knowledge service
   ipcMain.handle('coding-crawler:start-python-service', async () => {
     if (pythonProcess) {
@@ -25,7 +43,22 @@ export function setupCodingCrawlerHandlers() {
     }
 
     try {
-      const workspacePath = (store as any).get('currentWorkspace') || process.cwd();
+      // Use dedicated coding workspace
+      const codingWorkspace = (store as any).get('codingWorkspace') || 
+        path.join(process.env.HOME || process.env.USERPROFILE || '', 'Documents', 'My-Coding-Projects');
+      
+      // Ensure workspace exists
+      const fs = require('fs');
+      if (!fs.existsSync(codingWorkspace)) {
+        fs.mkdirSync(codingWorkspace, { recursive: true });
+      }
+      
+      // Ensure .knowledge folder exists
+      const knowledgeDir = path.join(codingWorkspace, '.knowledge');
+      if (!fs.existsSync(knowledgeDir)) {
+        fs.mkdirSync(knowledgeDir, { recursive: true });
+      }
+      
       const pythonPath = process.platform === 'darwin' ? 
         '/opt/homebrew/bin/python3' : 'python3';
       
@@ -35,7 +68,7 @@ export function setupCodingCrawlerHandlers() {
       ], {
         env: {
           ...process.env,
-          KNOWLEDGE_WORKSPACE: workspacePath,
+          KNOWLEDGE_WORKSPACE: codingWorkspace,  // Use coding workspace
           PYTHONUNBUFFERED: '1'
         }
       });
