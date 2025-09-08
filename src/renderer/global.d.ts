@@ -197,6 +197,75 @@ interface ElectronAPI {
     data?: any;
     error?: string;
   }>;
+  
+  // Semantic Search API
+  semanticSearch?: {
+    initialize: () => Promise<{ success: boolean; error?: string }>;
+    indexWorkspace: (workspacePath: string) => Promise<{ success: boolean; indexed: number; error?: string }>;
+    search: (query: string, options?: { limit?: number; filter?: string }) => Promise<{
+      success: boolean;
+      results?: Array<{
+        path: string;
+        content: string;
+        score: number;
+        metadata?: any;
+      }>;
+      error?: string;
+    }>;
+    getStatus: () => Promise<{
+      initialized: boolean;
+      totalDocuments: number;
+      lastIndexed?: string;
+    }>;
+    clearIndex: () => Promise<{ success: boolean; error?: string }>;
+    updateDocument: (path: string, content: string) => Promise<{ success: boolean; error?: string }>;
+    deleteDocument: (path: string) => Promise<{ success: boolean; error?: string }>;
+  };
+  
+  // Ensure directory helper
+  ensureDir?: (path: string) => Promise<void>;
+  
+  // Coding Crawler API
+  codingCrawler?: {
+    startCrawl: (args: {
+      url: string;
+      maxPages: number;
+      depth: number;
+      profileName?: string;
+    }) => Promise<{
+      success: boolean;
+      sessionId?: string;
+      error?: string;
+    }>;
+    stopCrawl: () => Promise<{
+      success: boolean;
+      error?: string;
+    }>;
+    getProfiles: () => Promise<Array<{
+      name: string;
+      baseUrl: string;
+      patterns: string[];
+    }>>;
+    search: (query: string, searchType: 'hybrid' | 'keyword' | 'semantic') => Promise<Array<{
+      type: string;
+      content: string;
+      score: number;
+      metadata?: any;
+    }>>;
+    getStats: () => Promise<{
+      totalDocuments: number;
+      totalExamples: number;
+      totalAPIs: number;
+      languages: string[];
+      frameworks: string[];
+      lastCrawl?: string;
+    }>;
+    startPythonService: () => Promise<void>;
+    onProgress: (callback: (progress: any) => void) => void;
+    onError: (callback: (error: any) => void) => void;
+    onComplete: (callback: () => void) => void;
+    removeListeners: () => void;
+  };
 }
 
 interface ConversationMode {

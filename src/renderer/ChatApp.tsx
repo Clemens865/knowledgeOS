@@ -6,6 +6,7 @@ import APIKeysModal from './components/APIKeysModal/APIKeysModal';
 import { MCPServersModal } from './components/MCPServersModal/MCPServersModal';
 import ConversationModesModal from './components/ConversationModesModal/ConversationModesModal';
 import { EnhancedOctopusMode } from './components/OctopusMode/EnhancedOctopusMode';
+import { CodingCrawlerView } from './components/CodingCrawlerView/CodingCrawlerView';
 import { AnalyticsView } from '../features/analytics/AnalyticsView';
 import KnowledgeGraphView from '../features/knowledgeGraph/KnowledgeGraphView';
 import { ConversationMode, DEFAULT_MODES } from '../core/ConversationModes';
@@ -52,6 +53,7 @@ function ChatApp() {
   const [showMCPModal, setShowMCPModal] = useState(false);
   const [showModesModal, setShowModesModal] = useState(false);
   const [showOctopusMode, setShowOctopusMode] = useState(false);
+  const [showCodingCrawler, setShowCodingCrawler] = useState(false);
   const [modes, setModes] = useState<ConversationMode[]>(DEFAULT_MODES);
   const [currentMode, setCurrentMode] = useState<ConversationMode>(DEFAULT_MODES[0]);
   const [splitLayout, setSplitLayout] = useState<'vertical' | 'horizontal'>('vertical');
@@ -102,6 +104,8 @@ function ChatApp() {
         setShowWorkspaceModal(true);
       } else if (action === 'octopusMode') {
         setShowOctopusMode(true);
+      } else if (action === 'codingCrawler') {
+        setShowCodingCrawler(true);
       }
     };
 
@@ -741,6 +745,17 @@ function ChatApp() {
                     <div 
                       className="tool-item clickable" 
                       onClick={() => {
+                        setShowCodingCrawler(true);
+                      }}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <span className="tool-icon">🕷️</span>
+                      <span className="tool-name">Coding Crawler</span>
+                      <span className="active-badge">New!</span>
+                    </div>
+                    <div 
+                      className="tool-item clickable" 
+                      onClick={() => {
                         setSplitViewMode('graph');
                         setActiveTool(null);
                       }}
@@ -949,6 +964,15 @@ function ChatApp() {
       
       {showOctopusMode && (
         <EnhancedOctopusMode onClose={() => setShowOctopusMode(false)} />
+      )}
+      
+      {showCodingCrawler && (
+        <div className="modal-overlay" onClick={() => setShowCodingCrawler(false)}>
+          <div className="modal-content large" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setShowCodingCrawler(false)}>×</button>
+            <CodingCrawlerView />
+          </div>
+        </div>
       )}
       
       <MCPServersModal

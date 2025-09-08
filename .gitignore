@@ -63,4 +63,4 @@ knowledge-base/temporal/events/
 knowledge-base/temporal/memories/
 knowledge-base/temporal/journal/
 knowledge-base/data/raw/
-knowledge-base/data/processed/
+knowledge-base/data/processed/__pycache__/

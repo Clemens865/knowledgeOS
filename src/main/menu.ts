@@ -184,6 +184,13 @@ export function createMenu() {
           click: () => {
             BrowserWindow.getFocusedWindow()?.webContents.send('menu:octopusMode');
           }
+        },
+        {
+          label: '🕷️ Coding Crawler',
+          accelerator: 'CmdOrCtrl+Shift+D',
+          click: () => {
+            BrowserWindow.getFocusedWindow()?.webContents.send('menu:codingCrawler');
+          }
         }
       ]
     },

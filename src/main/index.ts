@@ -10,6 +10,7 @@ import { setupConversationModesHandlers } from './conversationModesHandlers';
 import { setupKnowledgeGraphHandlers } from './knowledgeGraphHandlers';
 import { setupKnowledgeAgentHandlers } from './knowledgeAgentHandlers';
 import { setupOctopusHandlers } from './octopusHandlers';
+import { setupCodingCrawlerHandlers } from './codingCrawlerHandlers';
 import Store from 'electron-store';
 import { initMCPManager, getMCPManager } from './mcpManager';
 import { PythonServiceManager } from './services/PythonServiceManager';
@@ -120,6 +121,9 @@ app.whenReady().then(() => {
   
   // Setup Octopus Mode (it will get LLM service dynamically)
   setupOctopusHandlers();
+  
+  // Setup Coding Crawler Mode (standalone feature)
+  setupCodingCrawlerHandlers();
   
   // Initialize MCP Manager
   initMCPManager();

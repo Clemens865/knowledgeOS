@@ -33,6 +33,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
       'menu:openProject',
       'menu:newProject',
       'menu:octopusMode',
+      'menu:codingCrawler',
     ];
     
     channels.forEach(channel => {
@@ -56,6 +57,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.removeAllListeners('menu:openProject');
     ipcRenderer.removeAllListeners('menu:newProject');
     ipcRenderer.removeAllListeners('menu:octopusMode');
+    ipcRenderer.removeAllListeners('menu:codingCrawler');
   },
   
   // Settings API
@@ -135,5 +137,31 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.invoke('octopus:get-session', sessionId),
   
   exportOctopusContent: (args: { sessionId: string; format: 'markdown' | 'json' | 'knowledge' }) => 
-    ipcRenderer.invoke('octopus:export-content', args)
+    ipcRenderer.invoke('octopus:export-content', args),
+  
+  // Coding Crawler API
+  codingCrawler: {
+    startPythonService: () => ipcRenderer.invoke('coding-crawler:start-python-service'),
+    startCrawl: (options: any) => ipcRenderer.invoke('coding-crawler:start-crawl', options),
+    stopCrawl: () => ipcRenderer.invoke('coding-crawler:stop-crawl'),
+    getProfiles: () => ipcRenderer.invoke('coding-crawler:get-profiles'),
+    search: (query: string, searchType?: string) => ipcRenderer.invoke('coding-crawler:search', query, searchType),
+    getApiSignature: (className: string, methodName: string) => ipcRenderer.invoke('coding-crawler:get-api-signature', className, methodName),
+    getStats: () => ipcRenderer.invoke('coding-crawler:get-stats'),
+    createProjectTemplate: (projectPath: string, options: any) => ipcRenderer.invoke('coding-crawler:create-project-template', projectPath, options),
+    onProgress: (callback: (progress: any) => void) => {
+      ipcRenderer.on('coding-crawler:progress', (_, progress) => callback(progress));
+    },
+    onError: (callback: (error: any) => void) => {
+      ipcRenderer.on('coding-crawler:error', (_, error) => callback(error));
+    },
+    onComplete: (callback: (result: any) => void) => {
+      ipcRenderer.on('coding-crawler:complete', (_, result) => callback(result));
+    },
+    removeListeners: () => {
+      ipcRenderer.removeAllListeners('coding-crawler:progress');
+      ipcRenderer.removeAllListeners('coding-crawler:error');
+      ipcRenderer.removeAllListeners('coding-crawler:complete');
+    }
+  }
 });
