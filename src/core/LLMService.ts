@@ -201,7 +201,8 @@ Always use these functions to maintain the knowledge base, but don't mention usi
       headers: {
         'Content-Type': 'application/json',
         'x-api-key': this.provider.apiKey,
-        'anthropic-version': '2023-06-01'
+        'anthropic-version': '2023-06-01',
+        'anthropic-beta': 'max-tokens-3-5-sonnet-2024-07-15'
       },
       body: JSON.stringify({
         model: this.provider.model || 'claude-opus-4-1-20250805',

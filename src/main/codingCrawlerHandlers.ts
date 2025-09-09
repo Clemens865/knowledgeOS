@@ -39,7 +39,14 @@ export function setupCodingCrawlerHandlers() {
   // Start Python coding knowledge service
   ipcMain.handle('coding-crawler:start-python-service', async () => {
     if (pythonProcess) {
-      return { success: true, message: 'Service already running' };
+      // Check if process is actually alive
+      try {
+        process.kill(pythonProcess.pid, 0);
+        return { success: true, message: 'Service already running', port: 8001 };
+      } catch (e) {
+        // Process is dead, clean up
+        pythonProcess = null;
+      }
     }
 
     try {
@@ -62,6 +69,19 @@ export function setupCodingCrawlerHandlers() {
       const pythonPath = process.platform === 'darwin' ? 
         '/opt/homebrew/bin/python3' : 'python3';
       
+      // Kill any existing Python processes on port 8001
+      try {
+        const { execSync } = require('child_process');
+        if (process.platform === 'darwin' || process.platform === 'linux') {
+          execSync('lsof -ti:8001 | xargs kill -9', { stdio: 'ignore' });
+        }
+      } catch (e) {
+        // Ignore errors if no process found
+      }
+      
+      // Small delay to ensure port is freed
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
       // Start the Python service
       pythonProcess = spawn(pythonPath, [
         path.join(__dirname, '..', '..', 'src', 'python', 'coding_knowledge_api.py')
@@ -70,7 +90,9 @@ export function setupCodingCrawlerHandlers() {
           ...process.env,
           KNOWLEDGE_WORKSPACE: codingWorkspace,  // Use coding workspace
           PYTHONUNBUFFERED: '1'
-        }
+        },
+        detached: false,
+        stdio: ['ignore', 'pipe', 'pipe']
       });
 
       pythonProcess.stdout?.on('data', (data: Buffer) => {
@@ -85,8 +107,26 @@ export function setupCodingCrawlerHandlers() {
         console.log(`Coding Knowledge Service exited with code ${code}`);
         pythonProcess = null;
       });
+      
+      pythonProcess.on('error', (error: Error) => {
+        console.error('Failed to start Python service:', error);
+        pythonProcess = null;
+      });
 
-      return { success: true, message: 'Service started' };
+      // Wait for service to be ready
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Check if service is responding
+      try {
+        const response = await fetch('http://localhost:8001/health');
+        if (response.ok) {
+          return { success: true, message: 'Service started successfully', port: 8001 };
+        }
+      } catch (e) {
+        // Service might still be starting
+      }
+
+      return { success: true, message: 'Service starting...', port: 8001 };
     } catch (error) {
       return { success: false, error: (error as Error).message };
     }
@@ -112,13 +152,13 @@ export function setupCodingCrawlerHandlers() {
         event.sender.send('coding-crawler:complete', result);
       });
 
-      // Start the crawl
+      // Start the crawl - use coding workspace
+      const codingWorkspace = (store as any).get('codingWorkspace') || 
+        path.join(process.env.HOME || process.env.USERPROFILE || '', 'Documents', 'My-Coding-Projects');
+      
       const result = await crawlerService.crawl({
         ...options,
-        outputPath: path.join(
-          (store as any).get('currentWorkspace') || process.cwd(),
-          '.knowledge'
-        )
+        outputPath: path.join(codingWorkspace, '.knowledge')
       });
 
       // Save results to Python database
@@ -155,6 +195,11 @@ export function setupCodingCrawlerHandlers() {
   // Search code knowledge
   ipcMain.handle('coding-crawler:search', async (_, query, searchType = 'hybrid') => {
     try {
+      // Ensure Python service is running
+      if (!pythonProcess) {
+        throw new Error('Python service not available. Please start the service first.');
+      }
+      
       const response = await fetch('http://localhost:8001/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -167,10 +212,12 @@ export function setupCodingCrawlerHandlers() {
       
       return await response.json();
     } catch (error) {
+      console.error('Search error:', error);
       return {
         success: false,
         error: (error as Error).message,
-        results: []
+        results: [],
+        serviceStatus: pythonProcess ? 'running' : 'not running'
       };
     }
   });
@@ -281,8 +328,42 @@ export function setupCodingCrawlerHandlers() {
   // Stop Python service on cleanup
   ipcMain.on('coding-crawler:cleanup', () => {
     if (pythonProcess) {
-      pythonProcess.kill();
+      try {
+        pythonProcess.kill('SIGTERM');
+        // Give it time to clean up
+        setTimeout(() => {
+          if (pythonProcess) {
+            pythonProcess.kill('SIGKILL');
+          }
+        }, 1000);
+      } catch (e) {
+        console.error('Error killing Python process:', e);
+      }
       pythonProcess = null;
+    }
+  });
+  
+  // Check Python service status
+  ipcMain.handle('coding-crawler:check-service', async () => {
+    if (!pythonProcess) {
+      return { running: false, message: 'Service not started' };
+    }
+    
+    try {
+      // Check if process is alive
+      process.kill(pythonProcess.pid, 0);
+      
+      // Check if service is responding
+      const response = await fetch('http://localhost:8001/health');
+      if (response.ok) {
+        const health = await response.json();
+        return { running: true, healthy: true, ...health };
+      }
+      
+      return { running: true, healthy: false, message: 'Service not responding' };
+    } catch (e) {
+      pythonProcess = null;
+      return { running: false, message: 'Service crashed' };
     }
   });
 }

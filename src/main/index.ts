@@ -14,6 +14,10 @@ import { setupCodingCrawlerHandlers } from './codingCrawlerHandlers';
 import Store from 'electron-store';
 import { initMCPManager, getMCPManager } from './mcpManager';
 import { PythonServiceManager } from './services/PythonServiceManager';
+import { installSafeLogger } from './utils/safeLogger';
+
+// Install safe logger to prevent EPIPE errors
+installSafeLogger();
 
 // Set the app name before anything else - MUST be done early!
 app.setName('KnowledgeOS');
@@ -164,7 +168,12 @@ app.on('window-all-closed', () => {
 });
 
 // Clean up MCP connections and Python service on app quit
-app.on('before-quit', async () => {
+app.on('before-quit', async (event) => {
+  event.preventDefault();
+  
+  // Cleanup Coding Crawler Python service
+  mainWindow?.webContents.send('coding-crawler:cleanup');
+  
   const mcpManager = getMCPManager();
   if (mcpManager) {
     await mcpManager.cleanup();
@@ -175,6 +184,21 @@ app.on('before-quit', async () => {
     pythonService.cleanup();
     console.log('🐍 Python service cleaned up');
   }
+  
+  // Kill any remaining Python processes on port 8001
+  try {
+    const { execSync } = require('child_process');
+    if (process.platform === 'darwin' || process.platform === 'linux') {
+      execSync('lsof -ti:8001 | xargs kill -9', { stdio: 'ignore' });
+    }
+  } catch (e) {
+    // Ignore if no process found
+  }
+  
+  // Now actually quit
+  setTimeout(() => {
+    app.exit(0);
+  }, 100);
 });
 
 // Security: Prevent new window creation
